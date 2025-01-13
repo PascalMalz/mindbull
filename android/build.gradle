@@ -1,9 +1,20 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter() // Add for legacy dependencies if needed
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0'
+    }
+}
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+        jcenter()
     }
-
 }
 
 rootProject.buildDir = "../build"
@@ -16,4 +27,13 @@ subprojects {
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'androidx.core:core-ktx:1.9.0'
+        force 'androidx.appcompat:appcompat:1.6.1'
+        force 'androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1'
+        force 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
+    }
 }

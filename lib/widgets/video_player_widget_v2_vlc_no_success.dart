@@ -1,25 +1,19 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'dart:io';
 
 class VideoPlayerWidgetV2 extends StatefulWidget {
   final File? videoFile;
   final String? videoUrl;
-  final bool useVlc; // Flag to use VLC or video_player
-  final bool
-      enablePlaybackSpeed; // Flag to enable/disable playback speed controls
+  final bool enablePlaybackSpeed;
 
   const VideoPlayerWidgetV2({
     super.key,
     this.videoFile,
     this.videoUrl,
-    this.useVlc = false, // Default to using video_player
-    this.enablePlaybackSpeed =
-        false, // Default to disabling playback speed controls
-  })  : assert(videoFile != null || videoUrl != null,
+    this.enablePlaybackSpeed = false,
+  }) : assert(videoFile != null || videoUrl != null,
             'A video file or a video URL must be provided.');
 
   @override
@@ -27,15 +21,12 @@ class VideoPlayerWidgetV2 extends StatefulWidget {
 }
 
 class _VideoPlayerWidgetV2State extends State<VideoPlayerWidgetV2> {
-  late dynamic
-      _controller; // Can be either VideoPlayerController or VlcPlayerController
+  late VideoPlayerController _controller;
   late Future<void> _initializeVideoPlayerFuture;
-  late bool isVlc;
 
   @override
   void initState() {
     super.initState();
-    isVlc = widget.useVlc;
     _initVideoPlayer();
   }
 
@@ -43,43 +34,23 @@ class _VideoPlayerWidgetV2State extends State<VideoPlayerWidgetV2> {
   void didUpdateWidget(VideoPlayerWidgetV2 oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.videoFile != oldWidget.videoFile ||
-        widget.videoUrl != oldWidget.videoUrl ||
-        widget.useVlc != oldWidget.useVlc) {
+        widget.videoUrl != oldWidget.videoUrl) {
       _reinitializeVideoPlayer();
     }
   }
 
   void _initVideoPlayer() {
-    if (widget.useVlc) {
-      print("Initializing VLC Player...");
-      _controller = widget.videoFile != null
-          ? VlcPlayerController.file(widget.videoFile!)
-          : VlcPlayerController.network(
-              widget.videoUrl!,
-              hwAcc: HwAcc.full, // Ensure hardware acceleration is enabled
-              autoPlay: true,
-              options: VlcPlayerOptions(),
-            );
-
-      _initializeVideoPlayerFuture = _controller.initialize();
-    } else {
-      print("Initializing Default Video Player...");
-      _controller = widget.videoFile != null
-          ? VideoPlayerController.file(widget.videoFile!)
-          : VideoPlayerController.network(widget.videoUrl!);
-      _initializeVideoPlayerFuture = _controller.initialize().then((_) {
-        setState(() {});
-      });
-    }
+    _controller = widget.videoFile != null
+        ? VideoPlayerController.file(widget.videoFile!)
+        : VideoPlayerController.network(widget.videoUrl!);
+    _initializeVideoPlayerFuture = _controller.initialize().then((_) {
+      setState(() {});
+    });
   }
 
   Future<void> _reinitializeVideoPlayer() async {
-    if (_controller is VideoPlayerController) {
-      await _controller.pause();
-      await _controller.dispose();
-    } else if (_controller is VlcPlayerController) {
-      _controller.dispose();
-    }
+    await _controller.pause();
+    await _controller.dispose();
     setState(() {
       _initVideoPlayer();
     });
@@ -87,11 +58,7 @@ class _VideoPlayerWidgetV2State extends State<VideoPlayerWidgetV2> {
 
   @override
   void dispose() {
-    if (_controller is VideoPlayerController) {
-      _controller.dispose();
-    } else if (_controller is VlcPlayerController) {
-      _controller.dispose();
-    }
+    _controller.dispose();
     super.dispose();
   }
 
@@ -106,10 +73,8 @@ class _VideoPlayerWidgetV2State extends State<VideoPlayerWidgetV2> {
       future: _initializeVideoPlayerFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done &&
-            (isVlc || (_controller.value.isInitialized))) {
-          final aspectRatio = isVlc
-              ? _controller.value.aspectRatio
-              : _controller.value.aspectRatio;
+            _controller.value.isInitialized) {
+          final aspectRatio = _controller.value.aspectRatio;
           return Center(
             child: Container(
               width: maxWidth,
@@ -121,21 +86,12 @@ class _VideoPlayerWidgetV2State extends State<VideoPlayerWidgetV2> {
                   child: Stack(
                     alignment: Alignment.bottomCenter,
                     children: <Widget>[
-                      isVlc
-                          ? VlcPlayer(
-                              controller: _controller,
-                              aspectRatio: aspectRatio,
-                            )
-                          : VideoPlayer(_controller),
+                      VideoPlayer(_controller),
                       _ControlsOverlay(
                         controller: _controller,
-                        isVlc: isVlc,
                         enablePlaybackSpeed: widget.enablePlaybackSpeed,
                       ),
-                      if (!isVlc)
-                        _SeekBar(
-                          controller: _controller,
-                        ),
+                      _SeekBar(controller: _controller),
                     ],
                   ),
                 ),
@@ -151,22 +107,18 @@ class _VideoPlayerWidgetV2State extends State<VideoPlayerWidgetV2> {
 }
 
 class _ControlsOverlay extends StatelessWidget {
-  final dynamic
-      controller; // Can be VideoPlayerController or VlcPlayerController
-  final bool isVlc;
+  final VideoPlayerController controller;
   final bool enablePlaybackSpeed;
 
   const _ControlsOverlay({
     super.key,
     required this.controller,
-    required this.isVlc,
     required this.enablePlaybackSpeed,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isPlaying =
-        isVlc ? controller.value.isPlaying : controller.value.isPlaying;
+    final isPlaying = controller.value.isPlaying;
     return Stack(
       alignment: Alignment.bottomCenter,
       children: <Widget>[
@@ -179,7 +131,7 @@ class _ControlsOverlay extends StatelessWidget {
             }
           },
         ),
-        if (enablePlaybackSpeed && !isVlc)
+        if (enablePlaybackSpeed)
           Positioned(
             top: 10,
             right: 10,

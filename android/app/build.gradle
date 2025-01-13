@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "de.mindbull.mindbull"
-    compileSdk = flutter.compileSdkVersion
+    //compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -16,7 +17,8 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        //jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
@@ -24,10 +26,13 @@ android {
         applicationId = "de.mindbull.mindbull"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 24
+
+        //targetSdk = flutter.targetSdkVersion
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        resConfigs "en"
     }
 
     signingConfigs {
@@ -66,4 +71,6 @@ flutter {
 
 dependencies {
     implementation 'com.google.android.gms:play-services-auth:20.4.1'
+    implementation 'androidx.core:core-ktx:1.9.0'
+implementation 'androidx.appcompat:appcompat:1.6.1'
 }

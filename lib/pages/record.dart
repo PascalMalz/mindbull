@@ -54,7 +54,7 @@ class _AudioRecorderState extends State<AudioRecorder> {
 
   void initDirectory() async {
     String relativePath = '/audio';
-    String defaultPath = getLocalPath() as String;
+    String defaultPath = await getLocalPath();
     String targetPath = defaultPath + relativePath;
     print('targetPath: $targetPath');
     await ensureDirectoryExists(targetPath);

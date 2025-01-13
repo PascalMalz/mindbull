@@ -17,7 +17,6 @@ class HomeScreenV2 extends StatefulWidget {
 class _HomeScreenV2State extends State<HomeScreenV2>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  late TabController _journalTabController;
 
   final List<String> categories = [
     'Affirmation',
@@ -36,7 +35,6 @@ class _HomeScreenV2State extends State<HomeScreenV2>
   void initState() {
     super.initState();
     _tabController = TabController(length: categories.length + 1, vsync: this);
-    _journalTabController = TabController(length: 2, vsync: this);
 
     // Initialize journal entries
     for (var category in categories) {
@@ -47,7 +45,6 @@ class _HomeScreenV2State extends State<HomeScreenV2>
   @override
   void dispose() {
     _tabController.dispose();
-    _journalTabController.dispose();
     super.dispose();
   }
 
@@ -119,69 +116,35 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                           ),
                         ),
                         const Divider(height: 1, color: Colors.grey),
-                        // Journal Tabs (Global and Tab-Specific)
-                        Column(
-                          children: [
-                            TabBar(
-                              controller: _journalTabController,
-                              labelColor: Colors.deepPurple,
-                              unselectedLabelColor: Colors.black,
-                              indicatorColor: Colors.deepPurple,
-                              tabs: [
-                                const Tab(text: "Global Journal"),
-                                Tab(text: "Journal for $category"),
+                        // Journal Toggle Button
+                        InkWell(
+                          onTap: () {
+                            _showJournalBottomSheet(context, category);
+                          },
+                          child: Container(
+                            height: 50,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "Open Journal",
+                                  style: TextStyle(
+                                    color: Colors.deepPurple,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.edit,
+                                    color: Colors.deepPurple),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              height: 150, // Adjust height as needed
-                              child: TabBarView(
-                                controller: _journalTabController,
-                                children: [
-                                  // Global Journal Tab
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: TextField(
-                                      maxLines: 3,
-                                      decoration: const InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        hintText:
-                                            "Log general thoughts or reflections here",
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          globalJournal = value;
-                                        });
-                                      },
-                                      controller: TextEditingController(
-                                        text: globalJournal,
-                                      ),
-                                    ),
-                                  ),
-                                  // Tab-Specific Journal
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: TextField(
-                                      maxLines: 3,
-                                      decoration: const InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        hintText:
-                                            "What did you learn or want to remember?",
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          tabSpecificJournals[category] = value;
-                                        });
-                                      },
-                                      controller: TextEditingController(
-                                        text: tabSpecificJournals[category],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                          ),
+                        ),
+                        //add devider line
+                        const Divider(
+                          height: 1,
+                          color: Colors.grey,
                         ),
                       ],
                     );
@@ -203,6 +166,83 @@ class _HomeScreenV2State extends State<HomeScreenV2>
           ],
         ),
       ),
+    );
+  }
+
+  void _showJournalBottomSheet(BuildContext context, String category) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: MediaQuery.of(context).viewInsets,
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            height: 400, // Adjust height as needed
+            child: Column(
+              children: [
+                TabBar(
+                  controller: TabController(length: 2, vsync: this),
+                  labelColor: Colors.deepPurple,
+                  unselectedLabelColor: Colors.black,
+                  indicatorColor: Colors.deepPurple,
+                  tabs: [
+                    const Tab(text: "Global Journal"),
+                    Tab(text: "Journal for $category"),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: TabBarView(
+                    controller: TabController(length: 2, vsync: this),
+                    children: [
+                      // Global Journal Tab
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+                        child: TextField(
+                          maxLines: 15,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText:
+                                "Log general thoughts or reflections here",
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              globalJournal = value;
+                            });
+                          },
+                          controller: TextEditingController(
+                            text: globalJournal,
+                          ),
+                        ),
+                      ),
+                      // Tab-Specific Journal
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+                        child: TextField(
+                          maxLines: 15,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: "What did you learn or want to remember?",
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              tabSpecificJournals[category] = value;
+                            });
+                          },
+                          controller: TextEditingController(
+                            text: tabSpecificJournals[category],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

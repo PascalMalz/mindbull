@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:mindbull/api/api_comment_get.dart';
 import 'package:mindbull/api/api_like_post.dart';
@@ -343,7 +342,7 @@ class _PostCardState extends State<PostCard> {
                       ),
                     ),
                     const Text('' ?? '',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.deepPurple),
                         textAlign: TextAlign.center),
                   ],
                 ),
@@ -395,7 +394,7 @@ class _PostCardState extends State<PostCard> {
                         ),
                       ),
                       const Text('' ?? '',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: Colors.deepPurple),
                           textAlign: TextAlign.center),
                     ],
                   ),
@@ -418,7 +417,7 @@ class _PostCardState extends State<PostCard> {
                       padding: const EdgeInsets.all(0.0),
                       icon: const Icon(
                         Icons.star_rate_outlined,
-                        color: Colors.white,
+                        color: Colors.deepPurple,
                         size: 40,
                       ),
                       onPressed: () {
@@ -426,7 +425,7 @@ class _PostCardState extends State<PostCard> {
                       },
                     ),
                     Text(post.ratingAverage.toString() ?? '',
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.deepPurple),
                         textAlign: TextAlign.center),
                     const SizedBox(
                       height: 8,
@@ -439,7 +438,7 @@ class _PostCardState extends State<PostCard> {
                         widget.post?.isLikedByUser ?? false
                             ? Icons.favorite
                             : Icons.favorite_border,
-                        color: Colors.white,
+                        color: Colors.deepPurple,
                         size: 40,
                       ),
                       onPressed: () async {
@@ -470,7 +469,7 @@ class _PostCardState extends State<PostCard> {
                     ),
                     Text(
                       '${widget.post?.totalLikes ?? 0} likes',
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.deepPurple),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(
@@ -480,7 +479,7 @@ class _PostCardState extends State<PostCard> {
                       padding: const EdgeInsets.all(0.0),
                       icon: const Icon(
                         Icons.share,
-                        color: Colors.white,
+                        color: Colors.deepPurple,
                         size: 40,
                       ),
                       onPressed: () {
@@ -494,7 +493,7 @@ class _PostCardState extends State<PostCard> {
                       padding: const EdgeInsets.all(0.0),
                       icon: const Icon(
                         Icons.note_add,
-                        color: Colors.white,
+                        color: Colors.deepPurple,
                         size: 40,
                       ),
                       onPressed: () {
@@ -508,7 +507,7 @@ class _PostCardState extends State<PostCard> {
                       padding: const EdgeInsets.all(0.0),
                       icon: const Icon(
                         Icons.comment,
-                        color: Colors.white,
+                        color: Colors.deepPurple,
                         size: 40,
                       ),
                       onPressed: () {
