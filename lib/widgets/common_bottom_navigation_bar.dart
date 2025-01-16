@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:mindbull/pages/library.dart';
+import 'package:mindbull/pages/unified_library.dart';
 import 'package:provider/provider.dart';
 import '../pages/audio_library.dart';
 //import '../pages/library.txt';
@@ -94,7 +95,7 @@ class _CommonBottomNavigationBarState extends State<CommonBottomNavigationBar> {
         // Initialize the page if it has not been initialized
         switch (index) {
           case 1:
-            _pages[index] = MusicLibraryHomeScreen(); //LogScreen();
+            _pages[index] = UnifiedLibraryScreen(); //LogScreen();
             break;
           case 2:
             _pages[index] = const AudioRecorder();
@@ -104,11 +105,11 @@ class _CommonBottomNavigationBarState extends State<CommonBottomNavigationBar> {
               title: '',
             );
             break;
-          case 4:
+/*           case 4:
             _pages[index] =
                 const AudioLibrary(); //ViewDataPage();//MediaEditorPage();
-            break;
-          case 5:
+            break; */
+          case 4:
             // Initialize the profile page only if the user is authorized
 
             Future<void> handleProfilePage() async {
@@ -174,9 +175,13 @@ class _CommonBottomNavigationBarState extends State<CommonBottomNavigationBar> {
                       label: 'Home',
                     ),
                     const BottomNavigationBarItem(
+                      icon: Icon(Icons.queue_music),
+                      label: 'Library',
+                    ),
+/*                     const BottomNavigationBarItem(
                       icon: Icon(Icons.search),
                       label: 'Search',
-                    ),
+                    ), */
                     const BottomNavigationBarItem(
                       icon: Icon(Icons.mic),
                       label: 'Record',
@@ -184,10 +189,6 @@ class _CommonBottomNavigationBarState extends State<CommonBottomNavigationBar> {
                     const BottomNavigationBarItem(
                       icon: Icon(Icons.add_circle_outline),
                       label: 'Create',
-                    ),
-                    const BottomNavigationBarItem(
-                      icon: Icon(Icons.queue_music),
-                      label: 'Library',
                     ),
                     BottomNavigationBarItem(
                       icon: CircleAvatar(

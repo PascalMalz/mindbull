@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mindbull/pages/goals_standalone.dart';
@@ -55,10 +56,9 @@ class _HomeScreenV2State extends State<HomeScreenV2>
     return AppBar(
       backgroundColor: Colors.white,
       iconTheme: const IconThemeData(color: Colors.deepPurple),
-      centerTitle: true,
+      //centerTitle: true,
       title: const Text(
         'Daily Mind Workout',
-        textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 20,
           color: Colors.black,
@@ -115,14 +115,34 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                             autoplayEnabled: false,
                           ),
                         ),
-                        const Divider(height: 1, color: Colors.grey),
+                        //const Divider(height: 1, color: Colors.grey),
                         // Journal Toggle Button
                         InkWell(
                           onTap: () {
                             _showJournalBottomSheet(context, category);
                           },
                           child: Container(
-                            height: 50,
+                            height: 50, // Height of the container
+                            decoration: BoxDecoration(
+                              color: Colors.white, // Background color
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(
+                                    20), // Rounded top-left corner
+                                topRight: Radius.circular(
+                                    20), // Rounded top-right corner
+                              ),
+                              border: Border(
+                                top: BorderSide(
+                                    color: Colors.grey.shade300,
+                                    width: 1), // Top border
+                                left: BorderSide(
+                                    color: Colors.grey.shade300,
+                                    width: 1), // Left border
+                                right: BorderSide(
+                                    color: Colors.grey.shade300,
+                                    width: 1), // Right border
+                              ),
+                            ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -141,10 +161,13 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                             ),
                           ),
                         ),
+
                         //add devider line
                         const Divider(
+                          endIndent: 12,
+                          indent: 12,
                           height: 1,
-                          color: Colors.grey,
+                          color: Color.fromARGB(123, 158, 158, 158),
                         ),
                       ],
                     );
@@ -170,15 +193,23 @@ class _HomeScreenV2State extends State<HomeScreenV2>
   }
 
   void _showJournalBottomSheet(BuildContext context, String category) {
+    String tempGlobalJournal = globalJournal; // Temporary storage
+    String tempCategoryJournal = tabSpecificJournals[category] ?? "";
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white, // White background
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(20)), // Rounded top corners
+      ),
       builder: (BuildContext context) {
         return Padding(
           padding: MediaQuery.of(context).viewInsets,
           child: Container(
             padding: const EdgeInsets.all(16.0),
-            height: 400, // Adjust height as needed
+            height: 450, // Adjust height as needed
             child: Column(
               children: [
                 TabBar(
@@ -207,12 +238,10 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                                 "Log general thoughts or reflections here",
                           ),
                           onChanged: (value) {
-                            setState(() {
-                              globalJournal = value;
-                            });
+                            tempGlobalJournal = value; // Update temp journal
                           },
                           controller: TextEditingController(
-                            text: globalJournal,
+                            text: tempGlobalJournal,
                           ),
                         ),
                       ),
@@ -226,17 +255,72 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                             hintText: "What did you learn or want to remember?",
                           ),
                           onChanged: (value) {
-                            setState(() {
-                              tabSpecificJournals[category] = value;
-                            });
+                            tempCategoryJournal = value; // Update temp journal
                           },
                           controller: TextEditingController(
-                            text: tabSpecificJournals[category],
+                            text: tempCategoryJournal,
                           ),
                         ),
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(
+                    height: 16), // Padding between text fields and buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        //primary: Colors.blue, // Revert button color
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8), // Padding
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(12), // Rounded corners
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          tempGlobalJournal = globalJournal; // Revert changes
+                          tempCategoryJournal =
+                              tabSpecificJournals[category] ?? "";
+                        });
+                      },
+                      child: const Text(
+                        "Revert Changes",
+                        style: TextStyle(
+                          //color: Colors.black,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        //primary: Colors.grey, // Save button color
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8), // Padding
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(12), // Rounded corners
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          globalJournal = tempGlobalJournal; // Save changes
+                          tabSpecificJournals[category] = tempCategoryJournal;
+                        });
+                        Navigator.pop(context); // Close the modal
+                      },
+                      child: const Text(
+                        "Close",
+                        style: TextStyle(
+                          //color: Colors.black,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
