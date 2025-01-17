@@ -2,4 +2,4 @@ git add .
 git commit -m "Your commit message"
 git push
 
-git commit -m "Library combined, Journal optimized ect."
+git commit -m "Chewie video implementation and journal function with hive storage"
