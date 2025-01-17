@@ -56,7 +56,10 @@ class ExerciseCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ExercisePlaybackScreen(exercise: exercise),
+            builder: (context) => ExercisePlaybackScreen(
+              exercise: exercise,
+              tabCategory: exercise.exerciseType, // Pass the correct category
+            ),
           ),
         );
       },

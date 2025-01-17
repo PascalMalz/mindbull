@@ -56,7 +56,7 @@ import 'models/composition_tag_adapter.dart';
 import 'models/personal_growth_characteristic_adapter.dart';
 import 'notifier/scroll_position_notifier.dart';
 import 'provider/record_list_provider.dart';
-
+import 'provider/journal_provider.dart';
 //todo implement Dependency Injection Framework to serve instances of classes over the application
 //todo implement State Management Solution
 //todo write testing for everything
@@ -120,15 +120,19 @@ Future<void> main() async {
   // initialize hive
   await Hive.initFlutter();
   // Register custom adapters
+
   Hive.registerAdapter(CompositionAdapter());
   Hive.registerAdapter(CompositionAudioAdapter());
   Hive.registerAdapter(AudioFileAdapter());
   Hive.registerAdapter(CompositionTagAdapter());
   Hive.registerAdapter(PersonalGrowthCharacteristicAdapter());
   // Open boxes without specifying types
+
   var metadataBox = await Hive.openBox<Audio>('audioMetadata');
   var compositionBox = await Hive.openBox<Composition>('compositionMetadata');
   var characteristicsBox = await Hive.openBox('characteristicsRatingsBox');
+
+  var journalBox = await Hive.openBox<String>('journalBox');
 
   print('main() called');
   print(StackTrace.current);
@@ -173,6 +177,11 @@ Future<void> main() async {
                 create: (context) => CharacteristicsProvider()),
             ChangeNotifierProvider(create: (context) => SingleVideoProvider()),
             // Add other providers here if needed
+            ChangeNotifierProvider(
+                create: (_) => JournalProvider(journalBox: journalBox)),
+            ChangeNotifierProvider(
+              create: (_) => JournalProvider(journalBox: journalBox),
+            ),
           ],
           child:
               CustomMaterialApp(), // You can include the lifecycle hooks here

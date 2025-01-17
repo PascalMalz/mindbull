@@ -33,7 +33,7 @@ class ApiExerciseService {
         options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );
 
-      print("Raw response data: ${response.data}");
+      print("VERBOSE: Raw response data: ${response.data}");
 
       // Save the response data to a file for debugging
       Directory docDir = await getApplicationDocumentsDirectory();
