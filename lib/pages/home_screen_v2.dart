@@ -60,9 +60,11 @@ class _HomeScreenV2State extends State<HomeScreenV2>
       ),
       elevation: 0,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => Scaffold.of(context).openEndDrawer(),
+        Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openEndDrawer(),
+          ),
         ),
       ],
     );
@@ -78,124 +80,6 @@ class _HomeScreenV2State extends State<HomeScreenV2>
       builder: (BuildContext context) {
         return JournalWidget(category: category);
       },
-    );
-  }
-
-  Drawer buildRightBar() {
-    return Drawer(
-      child: Consumer<UserDataProvider>(
-        builder: (context, userDataProvider, child) {
-          final user = userDataProvider.currentUser;
-          final username = user?.username ?? 'Not Logged In';
-
-          String? profilePictureUrl = user?.profilePictureUrl;
-          ImageProvider backgroundImage =
-              (profilePictureUrl != null && profilePictureUrl.isNotEmpty)
-                  ? NetworkImage(profilePictureUrl) as ImageProvider<Object>
-                  : const AssetImage('assets/pascalmalz.jpg')
-                      as ImageProvider<Object>;
-
-          return ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              DrawerHeader(
-                decoration: const BoxDecoration(
-                  color: Colors.deepPurple,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundImage: backgroundImage,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.auto_graph),
-                title: const Text('Goals'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const GoalsStandalone()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.question_mark),
-                title: const Text('Watch Intro Again'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Intro()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.notification_important),
-                title: const Text('Notifications'),
-                onTap: () {
-                  // Implement notification settings
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.lock),
-                title: const Text('Data Protection'),
-                onTap: () {
-                  // Implement data protection settings
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.manage_accounts_outlined),
-                title: const Text('Account'),
-                onTap: () {
-                  // Implement account settings
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text('Settings'),
-                onTap: () {
-                  // Implement settings
-                },
-              ),
-              if (user == null)
-                ListTile(
-                  leading: const Icon(Icons.login),
-                  title: const Text('Log In'),
-                  onTap: () async {
-                    await Navigator.pushNamed(
-                      context,
-                      '/authentication',
-                      arguments: {'redirectRoute': '/'},
-                    );
-                  },
-                ),
-              if (user != null)
-                ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text('Log Out'),
-                  onTap: () {
-                    final authProvider =
-                        Provider.of<AuthProvider>(context, listen: false);
-                    authProvider.logout();
-                    Navigator.pop(context);
-                  },
-                ),
-            ],
-          );
-        },
-      ),
     );
   }
 
@@ -315,6 +199,133 @@ class _HomeScreenV2State extends State<HomeScreenV2>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Drawer buildRightBar() {
+    return Drawer(
+      child: Consumer<UserDataProvider>(
+        builder: (context, userDataProvider, child) {
+          final user = userDataProvider.currentUser;
+          final username = user?.username ?? 'Not Logged In';
+
+          // Determine the background image for the profile picture
+          String? profilePictureUrl = user?.profilePictureUrl;
+          ImageProvider<Object> backgroundImage =
+              (profilePictureUrl != null && profilePictureUrl.isNotEmpty)
+                  ? NetworkImage(profilePictureUrl)
+                  : const AssetImage('assets/default_profile_picture.png');
+
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: const BoxDecoration(
+                  color: Colors.deepPurple,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundImage: backgroundImage,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      username,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.auto_graph),
+                title: const Text('Goals'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const GoalsStandalone(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.question_mark),
+                title: const Text('Watch Intro Again'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Intro()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.notification_important),
+                title: const Text('Notifications'),
+                onTap: () {
+                  // Implement notifications logic here
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.lock),
+                title: const Text('Data Protection'),
+                onTap: () {
+                  // Implement data protection logic here
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.manage_accounts_outlined),
+                title: const Text('Account'),
+                onTap: () {
+                  // Implement account logic here
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Settings'),
+                onTap: () {
+                  // Implement settings logic here
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Print User Data'),
+                onTap: () {
+                  print('User name: ${userDataProvider.currentUser?.username}');
+                  setState(() {}); // Update UI if needed
+                },
+              ),
+              if (user == null)
+                ListTile(
+                  leading: const Icon(Icons.login),
+                  title: const Text('Log In'),
+                  onTap: () async {
+                    final loggedIn = await Navigator.pushNamed(
+                      context,
+                      '/authentication',
+                      arguments: {'redirectRoute': '/'},
+                    );
+                  },
+                ),
+              if (user != null)
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Log Out'),
+                  onTap: () async {
+                    final authProvider =
+                        Provider.of<AuthProvider>(context, listen: false);
+                    authProvider.logout();
+                    setState(() {}); // Update UI after logout
+                  },
+                ),
+            ],
+          );
+        },
       ),
     );
   }

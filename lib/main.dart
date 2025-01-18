@@ -127,7 +127,7 @@ Future<void> main() async {
   Hive.registerAdapter(CompositionTagAdapter());
   Hive.registerAdapter(PersonalGrowthCharacteristicAdapter());
   // Open boxes without specifying types
-
+//todo check why the boxes are not opened in the runapp() function and if i used it mayby wrong in the respective files
   var metadataBox = await Hive.openBox<Audio>('audioMetadata');
   var compositionBox = await Hive.openBox<Composition>('compositionMetadata');
   var characteristicsBox = await Hive.openBox('characteristicsRatingsBox');
