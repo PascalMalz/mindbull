@@ -3,3 +3,6 @@ git commit -m "Your commit message"
 git push
 
 git commit -m "Chewie video implementation and journal function with hive storage"
+
+run test file:
+flutter run -t lib/test_main.dart > logs.txt
