@@ -1,18 +1,30 @@
-import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:mindbull/services/video_player_handler.dart';
+import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
+import 'package:just_audio/just_audio.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+void main() {
+  debugPrint = (String? message, {int? wrapWidth}) {
+    if (message != null &&
+        !message.contains('CCodecConfig') &&
+        !message.contains('BufferQueueProducer') &&
+        !message.contains('SurfaceControl')) {
+      print(message);
+    }
+  };
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: VideoScreen(),
+      title: 'Chewie with JustAudio',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const VideoScreen(),
     );
   }
 }
@@ -24,103 +36,178 @@ class VideoScreen extends StatefulWidget {
   State<VideoScreen> createState() => _VideoScreenState();
 }
 
-class _VideoScreenState extends State<VideoScreen> {
-  late VideoPlayerController _videoPlayerController;
-  AudioHandler? _audioHandler;
-  bool _isAudioServiceInitialized = false;
-  bool _isInitializing = false;
+class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
+  late final VideoPlayerController _videoController;
+  ChewieController? _chewieController;
+  late final AudioPlayer _audioPlayer;
+  bool _isPlayingAudio = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeVideoAndAudioService();
+    WidgetsBinding.instance.addObserver(this);
+    _initializeVideoController();
   }
 
-  Future<void> _initializeVideoAndAudioService() async {
-    if (_isInitializing) return;
-    _isInitializing = true;
+  void _initializeVideoController() {
+    print("Initializing video controller...");
+    _videoController = VideoPlayerController.network(
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    )..initialize().then((_) {
+        print("Video controller initialized.");
+        _chewieController = ChewieController(
+          videoPlayerController: _videoController,
+          autoPlay: true,
+          looping: false,
+        );
+        print("Chewie controller initialized.");
+        setState(() {});
 
-    try {
-      print("Initializing VideoPlayerController...");
-      _videoPlayerController = VideoPlayerController.networkUrl(
-        Uri.parse(
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-        ),
-      );
-
-      _videoPlayerController.addListener(() {
-        print(
-            "VideoPlayer isBuffering: ${_videoPlayerController.value.isBuffering}");
-        print("Video position: ${_videoPlayerController.value.position}");
+        // Initialize audio after video is ready
+        _initializeAudioPlayer();
       });
 
-      print("Initializing video player...");
-      await _videoPlayerController.initialize();
-      print("Video player initialized.");
+    // Listen to video state changes
+    _videoController.addListener(() async {
+      final videoValue = _videoController.value;
+      print("Video listener triggered: "
+          "isPlaying=${videoValue.isPlaying}, "
+          "position=${videoValue.position}, "
+          "buffered=${videoValue.buffered}, "
+          "duration=${videoValue.duration}");
+
+      // Sync audio when video is paused
+      if (!videoValue.isPlaying && !_isPlayingAudio) {
+        print("Video paused, syncing audio player...");
+        await _audioPlayer.seek(videoValue.position);
+        await _audioPlayer.pause();
+      }
+    });
+  }
+
+  void _initializeAudioPlayer() {
+    print("Initializing audio player...");
+    _audioPlayer = AudioPlayer();
+
+    print("Setting up audio player with URL...");
+    _audioPlayer.setUrl(
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused) {
+      print("App moved to background.");
+      _playAudioInBackground();
+    } else if (state == AppLifecycleState.resumed) {
+      print("App moved to foreground.");
+      _resumeVideoPlayback();
+    }
+  }
+
+  Future<void> _playAudioInBackground() async {
+    if (!_isPlayingAudio) {
+      print("Switching to audio playback...");
+      _isPlayingAudio = true;
+
+      print("Pausing video...");
+      await _videoController.pause();
+
+      final currentPosition = _videoController.value.position;
+      print("Syncing audio player to video position: $currentPosition...");
+      await _audioPlayer.seek(currentPosition);
+
+      print("Starting audio playback...");
+      await _audioPlayer.play();
+
+      setState(() {});
+    }
+  }
+
+  Future<void> _resumeVideoPlayback() async {
+    if (_isPlayingAudio) {
+      print("Resuming video playback...");
+      _isPlayingAudio = false;
+
+      print("Pausing audio playback...");
+      await _audioPlayer.pause();
+
+      final currentPosition = _audioPlayer.position;
+      print("Syncing video player to audio position: $currentPosition...");
+      await _videoController.seekTo(currentPosition);
 
       print("Starting video playback...");
-      await _videoPlayerController.play();
+      await _videoController.play();
 
-      print("Initializing AudioService...");
-      _audioHandler = await AudioService.init(
-        builder: () => VideoPlayerHandler(_videoPlayerController),
-        config: AudioServiceConfig(
-          androidNotificationChannelName: 'Video Playback',
-          androidNotificationIcon: 'mipmap/ic_launcher',
-          androidShowNotificationBadge: true,
-        ),
-      );
-      print("AudioService initialized.");
-
-      setState(() {
-        _isAudioServiceInitialized = true;
-      });
-    } catch (e, stacktrace) {
-      print("Error initializing services: $e");
-      print("Stacktrace: $stacktrace");
-    } finally {
-      _isInitializing = false;
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
-    _videoPlayerController.dispose();
-    _audioHandler?.stop();
+    WidgetsBinding.instance.removeObserver(this);
+    print("Disposing resources...");
+    _audioPlayer.dispose();
+    _chewieController?.dispose();
+    _videoController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Video Playback Test')),
-      body: Center(
-        child: _videoPlayerController.value.isInitialized
-            ? AspectRatio(
-                aspectRatio: _videoPlayerController.value.aspectRatio,
-                child: VideoPlayer(_videoPlayerController, key: UniqueKey()),
-              )
-            : CircularProgressIndicator(), // Fallback if not initialized
+      appBar: AppBar(
+        title: const Text('Chewie with Background Audio'),
       ),
-      floatingActionButton: _isAudioServiceInitialized
-          ? StreamBuilder<PlaybackState>(
-              stream: _audioHandler!.playbackState,
-              builder: (context, snapshot) {
-                final playbackState = snapshot.data;
-                final isPlaying = playbackState?.playing ?? false;
-                return FloatingActionButton(
-                  child: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                  onPressed: () {
-                    if (isPlaying) {
-                      _audioHandler?.pause();
-                    } else {
-                      _audioHandler?.play();
-                    }
-                  },
-                );
-              },
-            )
-          : null,
+      body: Column(
+        children: [
+          Expanded(
+            child: _chewieController != null &&
+                    _chewieController!.videoPlayerController.value.isInitialized
+                ? Chewie(controller: _chewieController!)
+                : const Center(child: CircularProgressIndicator()),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () async {
+                  if (_isPlayingAudio) {
+                    print("User pressed video mode button.");
+                    await _resumeVideoPlayback();
+                  } else {
+                    print("User pressed audio mode button.");
+                    await _playAudioInBackground();
+                  }
+                },
+                icon: Icon(
+                  _isPlayingAudio ? Icons.tv : Icons.headset,
+                ),
+              ),
+              IconButton(
+                onPressed: () async {
+                  if (_videoController.value.isPlaying) {
+                    print("User pressed pause button.");
+                    await _videoController.pause();
+                  } else {
+                    print("User pressed play button.");
+                    await _videoController.play();
+                  }
+                  setState(() {});
+                },
+                icon: Icon(
+                  _videoController.value.isPlaying
+                      ? Icons.pause
+                      : Icons.play_arrow,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

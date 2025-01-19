@@ -122,8 +122,8 @@ class _PostCardState extends State<PostCard> {
     bool hasVideoLink = post?.videoLink != null;
 
     if (hasVideoLink) {
-      print('videoLink in post: ${post?.videoLink}');
       videoPlayerWidget = VideoPlayerWidget(videoUrl: post?.videoLink);
+      print('videoLink in post: ${post?.videoLink}');
     } else if (compositionToPlay != null) {
       // Display composition player widget
       if (toggle_composition_tree) {
@@ -371,8 +371,7 @@ class _PostCardState extends State<PostCard> {
                             shape: BoxShape.circle, // Makes the container round
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.white.withOpacity(
-                                    0.5), // Adjust the color and opacity for the glow effect
+                                color: Colors.white,
                                 spreadRadius:
                                     3, // Increases the size of the shadow
                                 blurRadius: 7, // Softens the shadow
