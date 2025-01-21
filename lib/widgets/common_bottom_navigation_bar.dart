@@ -133,6 +133,7 @@ class _CommonBottomNavigationBarState extends State<CommonBottomNavigationBar> {
         }
         _isPageInitialized[index] = initialized;
       }
+
       _selectedIndex = index;
     });
   }

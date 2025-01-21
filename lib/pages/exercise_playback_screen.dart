@@ -92,94 +92,86 @@ class _ExercisePlaybackScreenState extends State<ExercisePlaybackScreen> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Exercise Details
-                      Text(
-                        widget.exercise.name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.exercise.description,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Expandable Instructions
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isInstructionsExpanded = !_isInstructionsExpanded;
-                          });
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Padding(
+                        padding: const EdgeInsets.all(16), // Default padding
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Instructions",
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            // Exercise Details
+                            Text(
+                              widget.exercise.name,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            Icon(
-                              _isInstructionsExpanded
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down,
-                              size: 24,
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.exercise.description,
+                              style: const TextStyle(fontSize: 16),
                             ),
+                            const SizedBox(height: 8),
+
+                            // Expandable Instructions
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isInstructionsExpanded =
+                                      !_isInstructionsExpanded;
+                                });
+                              },
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Instructions",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  Icon(
+                                    _isInstructionsExpanded
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                    size: 24,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_isInstructionsExpanded)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  widget.exercise.instructions,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ),
                           ],
                         ),
                       ),
-                      if (_isInstructionsExpanded)
+                      if (widget.exercise.media != null && isVideo)
                         Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            widget.exercise.instructions,
-                            style: const TextStyle(fontSize: 16),
+                          padding:
+                              const EdgeInsets.all(0), // No padding for video
+                          child: VideoPlayerWidget(
+                            videoUrl: widget.exercise.media!,
+                            thumbnailUrl: widget.exercise.thumbnail,
                           ),
                         ),
-
-                      const SizedBox(height: 16),
-
-                      // Media Player Section
-                      if (widget.exercise.media != null)
-                        if (isVideo)
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Ensure thumbnail fills available space
-                              Positioned.fill(
-                                child: widget.exercise.thumbnail != null
-                                    ? Image.network(
-                                        widget.exercise.thumbnail!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return Image.asset(
-                                            'assets/background_sky.jpg',
-                                            fit: BoxFit.cover,
-                                          );
-                                        },
-                                      )
-                                    : Image.asset('assets/background_sky.jpg',
-                                        fit: BoxFit.cover),
-                              ),
-                              VideoPlayerWidget(
-                                videoUrl: widget.exercise.media!,
-                                thumbnailUrl: widget.exercise.thumbnail,
-                              ),
-                            ],
-                          )
-                        else if (isAudio && audioFile != null)
-                          AudioPlayerSingleAudioWidget(
+                      if (widget.exercise.media != null &&
+                          isAudio &&
+                          audioFile != null)
+                        Padding(
+                          padding: const EdgeInsets.all(16), // Default padding
+                          child: AudioPlayerSingleAudioWidget(
                             audioFile: audioFile,
                             autoplayEnabled: true,
                           ),
+                        ),
                     ],
                   ),
                 ),
