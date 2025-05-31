@@ -78,19 +78,24 @@ class _AudioRecorderState extends State<AudioRecorder> {
 
   Future<void> _init() async {
     _showFilesInDirectory();
-    await _wavePlayer.preparePlayer(
-      path: _filePath,
-      shouldExtractWaveform: true,
-      volume: 1.0,
-    );
-    _wavePlayer.onCompletion.listen((_) {
-      setState(() {
-        _isPlaying = false;
-        _wavePlayer.stopPlayer();
-        audioFinished = true;
-        print('____________Listener Player Completed____________');
+
+    if (_filePath.isNotEmpty && File(_filePath).existsSync()) {
+      await _wavePlayer.preparePlayer(
+        path: _filePath,
+        shouldExtractWaveform: true,
+        volume: 1.0,
+      );
+      _wavePlayer.onCompletion.listen((_) {
+        setState(() {
+          _isPlaying = false;
+          _wavePlayer.stopPlayer();
+          audioFinished = true;
+          print('____________Listener Player Completed____________');
+        });
       });
-    });
+    } else {
+      print('No valid file found to initialize player.');
+    }
   }
 
   Future<void> _requestPermission() async {
@@ -501,10 +506,12 @@ class _AudioRecorderState extends State<AudioRecorder> {
                                 decoration: const InputDecoration(
                                   hintText: 'Enter File Name',
                                   enabledBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.black),
+                                    borderSide:
+                                        BorderSide(color: Colors.deepPurple),
                                   ),
                                   focusedBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.black),
+                                    borderSide:
+                                        BorderSide(color: Colors.deepPurple),
                                   ),
                                 ),
                                 style: const TextStyle(color: Colors.black),
@@ -518,7 +525,6 @@ class _AudioRecorderState extends State<AudioRecorder> {
                   Padding(
                     padding: const EdgeInsets.all(4.0),
                     child: Card(
-                      color: Colors.deepPurple,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Stack(
@@ -535,11 +541,11 @@ class _AudioRecorderState extends State<AudioRecorder> {
                                 shouldCalculateScrolledPosition: false,
                                 padding: const EdgeInsets.only(bottom: 0),
                                 waveStyle: const WaveStyle(
-                                  waveColor: Colors.white,
+                                  waveColor: Colors.deepPurple,
                                   waveThickness: 3,
                                   durationStyle: TextStyle(
                                       color: Colors.white, fontSize: 16),
-                                  durationLinesColor: Colors.white,
+                                  durationLinesColor: Colors.deepPurple,
                                   showDurationLabel: true,
                                   durationLinesHeight: 10,
                                   waveCap: StrokeCap.round,

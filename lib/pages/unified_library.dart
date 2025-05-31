@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mindbull/pages/favorites_screen.dart';
 
 class UnifiedLibraryScreen extends StatelessWidget {
   const UnifiedLibraryScreen({super.key});
@@ -24,7 +25,12 @@ class UnifiedLibraryScreen extends StatelessWidget {
               ),
             ),
           ),
-          _buildSectionCard(context, 'Favorites', Icons.favorite),
+          _buildSectionCard(context, 'Favorites', Icons.favorite, () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+            );
+          }),
           _buildSectionCard(context, 'Records', Icons.mic_rounded, () {
             Navigator.push(
               context,

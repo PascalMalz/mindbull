@@ -127,7 +127,7 @@ class _ExerciseDisplayScreenState extends State<ExerciseDisplayScreen> {
                     );
                   }
                   // Render exercise cards
-                  return ExerciseCard(
+                  return ExerciseCardWithFavorite(
                     exercise: exercises[index],
                     autoplayEnabled: widget.autoplayEnabled,
                   );

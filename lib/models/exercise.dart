@@ -10,8 +10,8 @@ class Exercise {
   final int xp;
   final bool isDefault;
   final bool isExclusive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final List<String> tags;
   final String createdBy;
 
@@ -49,8 +49,13 @@ class Exercise {
       xp: json['xp'] ?? 0, // Default to 0 XP if null
       isDefault: json['is_default'] ?? false,
       isExclusive: json['is_exclusive'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
+
       tags: List<String>.from(json['tags'] ?? []), // Handle empty tags
       createdBy: json['created_by'].toString(), // Ensure UUID is stringified
     );
@@ -70,8 +75,8 @@ class Exercise {
       'xp': xp,
       'is_default': isDefault,
       'is_exclusive': isExclusive,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
       'tags': tags,
       'created_by': createdBy,
     };

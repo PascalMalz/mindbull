@@ -131,6 +131,8 @@ Future<void> main() async {
   var metadataBox = await Hive.openBox<Audio>('audioMetadata');
   var compositionBox = await Hive.openBox<Composition>('compositionMetadata');
   var characteristicsBox = await Hive.openBox('characteristicsRatingsBox');
+  await Hive.openBox<List>('tabContent');
+  await Hive.openBox('favorites');
 
   var journalBox = await Hive.openBox<String>('journalBox');
 

@@ -160,7 +160,7 @@ class _ExercisePlaybackScreenState extends State<ExercisePlaybackScreen> {
                           child: VideoPlayerWidget(
                             videoUrl: widget.exercise.media!,
                             thumbnailUrl: widget.exercise.thumbnail,
-                            //backgroundPlayback: true,
+                            backgroundPlayback: true,
                           ),
                         ),
                       if (widget.exercise.media != null &&

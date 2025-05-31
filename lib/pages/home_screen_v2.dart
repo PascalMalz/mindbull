@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mindbull/models/tab_content_item.dart';
+import 'package:mindbull/pages/favorites_picker_screen.dart';
+import 'package:mindbull/pages/favorites_screen.dart';
+import 'package:mindbull/services/tab_content_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:mindbull/pages/goals_standalone.dart';
 import 'package:mindbull/pages/intro.dart';
@@ -21,6 +25,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
   late TabController _tabController;
 
   final List<String> categories = [
+    'Daily',
     'Affirmation',
     'Visualization',
     'Reframing',
@@ -121,10 +126,12 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: ExerciseDisplayScreen(
-                            exerciseType: category,
-                            autoplayEnabled: false,
-                          ),
+                          child: category == 'Daily'
+                              ? TabContentEditorView(tabName: category)
+                              : ExerciseDisplayScreen(
+                                  exerciseType: category,
+                                  autoplayEnabled: false,
+                                ),
                         ),
                         //const Divider(height: 1, color: Colors.grey),
                         // Journal Toggle Button
@@ -327,6 +334,202 @@ class _HomeScreenV2State extends State<HomeScreenV2>
           );
         },
       ),
+    );
+  }
+}
+
+class TabContentEditorView extends StatefulWidget {
+  final String tabName;
+
+  const TabContentEditorView({super.key, required this.tabName});
+
+  @override
+  State<TabContentEditorView> createState() => _TabContentEditorViewState();
+}
+
+class _TabContentEditorViewState extends State<TabContentEditorView> {
+  final TabContentManager _tabManager = TabContentManager();
+
+  late List<TabContentItem> items;
+
+  @override
+  void initState() {
+    super.initState();
+    items = _tabManager.getItems(widget.tabName);
+  }
+
+  void _updateOrder(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) newIndex -= 1;
+    _tabManager.reorderItems(widget.tabName, oldIndex, newIndex);
+    setState(() {
+      items = _tabManager.getItems(widget.tabName);
+    });
+  }
+
+  void _removeItem(String id) {
+    _tabManager.removeItem(widget.tabName, id);
+    setState(() {
+      items = _tabManager.getItems(widget.tabName);
+    });
+  }
+
+  void _showAddItemModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Select Content Type",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                leading: const Icon(Icons.star, color: Colors.deepPurple),
+                title: const Text('From Favourites'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleAddFromFavourites();
+                },
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.library_books, color: Colors.deepPurple),
+                title: const Text('From Library'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleAddFromLibrary();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.check_box, color: Colors.deepPurple),
+                title: const Text('Checklist'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleAddChecklist();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.audiotrack, color: Colors.deepPurple),
+                title: const Text('Audio File'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleAddAudio();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleAddFromFavourites() async {
+    final selectedItems = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const FavoritesPickerScreen()),
+    );
+
+    if (selectedItems != null && selectedItems is List) {
+      for (var item in selectedItems) {
+        final id = item['data']['exercise_uuid'] ??
+            item['data']['post_id'] ??
+            item['data']['audio_id'];
+        final type = item['content_type'];
+
+        final tabItem = TabContentItem(
+          id: id,
+          type: TabContentType.fromString(type), // Add this converter if needed
+          title: item['data']['name'] ??
+              item['data']['title'] ??
+              item['data']['content'] ??
+              'Favorite',
+          order: items.length,
+          metadata: item['data'],
+        );
+
+        _tabManager.addItem(widget.tabName, tabItem);
+      }
+
+      setState(() {
+        items = _tabManager.getItems(widget.tabName);
+      });
+    }
+  }
+
+  void _handleAddFromLibrary() {
+    // TODO: Open your library screen and pick an item
+    print("From Library tapped");
+  }
+
+  void _handleAddChecklist() {
+    final newItem = TabContentItem(
+      id: UniqueKey().toString(),
+      type: TabContentType.checklist,
+      title: 'My Checklist',
+      order: items.length,
+      metadata: {
+        'items': [
+          {'label': 'Task 1', 'done': false},
+          {'label': 'Task 2', 'done': false},
+        ],
+      },
+    );
+    _tabManager.addItem(widget.tabName, newItem);
+    setState(() {
+      items = _tabManager.getItems(widget.tabName);
+    });
+  }
+
+  void _handleAddAudio() {
+    // TODO: File picker or local audio reference
+    print("Audio tapped");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: ReorderableListView.builder(
+            itemCount: items.length,
+            onReorder: _updateOrder,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return ListTile(
+                key: ValueKey(item.id),
+                title: Text(item.title),
+                subtitle: Text(item.type.name),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _removeItem(item.id),
+                ),
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('Add Elements'),
+            onPressed: () {
+              _showAddItemModal(context);
+            },
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              //backgroundColor: Colors.deepPurple,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
