@@ -6,8 +6,8 @@ class TabContentManager {
 
   List<TabContentItem> getItems(String tabName) {
     final raw = _box.get(tabName) ?? [];
-    return List<Map<String, dynamic>>.from(raw)
-        .map((e) => TabContentItem.fromJson(e))
+    return raw
+        .map((e) => TabContentItem.fromJson(Map<String, dynamic>.from(e)))
         .toList()
       ..sort((a, b) => a.order.compareTo(b.order));
   }
@@ -36,6 +36,14 @@ class TabContentManager {
 
   void removeItem(String tabName, String itemId) {
     final items = getItems(tabName)..removeWhere((e) => e.id == itemId);
+    saveItems(tabName, items);
+  }
+
+  void updateItem(String tabName, TabContentItem updatedItem) {
+    final items = getItems(tabName).map((item) {
+      return item.id == updatedItem.id ? updatedItem : item;
+    }).toList();
+
     saveItems(tabName, items);
   }
 }

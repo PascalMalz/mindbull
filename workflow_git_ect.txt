@@ -2,7 +2,7 @@ git add .
 git commit -m "Your commit message"
 git push
 
-git commit -m "Chewie video implementation and journal function with hive storage"
+git commit -m "Favorites logic and add"
 
 run test file:
 flutter run -t lib/test_main.dart > logs.txt

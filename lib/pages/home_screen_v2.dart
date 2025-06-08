@@ -3,6 +3,7 @@ import 'package:mindbull/models/tab_content_item.dart';
 import 'package:mindbull/pages/favorites_picker_screen.dart';
 import 'package:mindbull/pages/favorites_screen.dart';
 import 'package:mindbull/services/tab_content_manager.dart';
+import 'package:mindbull/widgets/checklist_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:mindbull/pages/goals_standalone.dart';
 import 'package:mindbull/pages/intro.dart';
@@ -12,6 +13,7 @@ import '../provider/journal_provider.dart';
 import '../provider/user_data_provider.dart';
 import '../widgets/common_bottom_navigation_bar.dart';
 import '../widgets/journal_widget.dart';
+import 'package:uuid/uuid.dart';
 
 class HomeScreenV2 extends StatefulWidget {
   const HomeScreenV2({super.key});
@@ -23,7 +25,6 @@ class HomeScreenV2 extends StatefulWidget {
 class _HomeScreenV2State extends State<HomeScreenV2>
     with TickerProviderStateMixin {
   late TabController _tabController;
-
   final List<String> categories = [
     'Daily',
     'Affirmation',
@@ -98,7 +99,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
         backgroundColor: Colors.white,
         body: Column(
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 0),
             TabBar(
               controller: _tabController,
               isScrollable: true,
@@ -116,7 +117,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 0),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -180,7 +181,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                           ),
                         ),
 
-                        //add devider line
+                        //add divider line
                         const Divider(
                           endIndent: 12,
                           indent: 12,
@@ -349,7 +350,7 @@ class TabContentEditorView extends StatefulWidget {
 
 class _TabContentEditorViewState extends State<TabContentEditorView> {
   final TabContentManager _tabManager = TabContentManager();
-
+  final uuid = Uuid();
   late List<TabContentItem> items;
 
   @override
@@ -380,51 +381,84 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Select Content Type",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Select Content Type",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  const SizedBox(height: 10),
+                  ListTile(
+                    leading: const Icon(Icons.star, color: Colors.deepPurple),
+                    title: const Text('From Favourites'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleAddFromFavourites();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.library_books,
+                        color: Colors.deepPurple),
+                    title: const Text('From Library'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleAddFromLibrary();
+                    },
+                  ),
+                  ListTile(
+                    leading:
+                        const Icon(Icons.check_box, color: Colors.deepPurple),
+                    title: const Text('Checklist'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleAddChecklist();
+                    },
+                  ),
+                  ListTile(
+                    leading:
+                        const Icon(Icons.audiotrack, color: Colors.deepPurple),
+                    title: const Text('Audio File'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleAddAudio();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.horizontal_rule,
+                        color: Colors.deepPurple),
+                    title: const Text('Content Separator'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleAddSeparator();
+                    },
+                  ),
+                  ListTile(
+                    leading:
+                        const Icon(Icons.queue_music, color: Colors.deepPurple),
+                    title: const Text('Audio Playlist'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleAddAudioPlaylist();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.alarm, color: Colors.deepPurple),
+                    title: const Text('Reminder'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleAddReminder();
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              ListTile(
-                leading: const Icon(Icons.star, color: Colors.deepPurple),
-                title: const Text('From Favourites'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleAddFromFavourites();
-                },
-              ),
-              ListTile(
-                leading:
-                    const Icon(Icons.library_books, color: Colors.deepPurple),
-                title: const Text('From Library'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleAddFromLibrary();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.check_box, color: Colors.deepPurple),
-                title: const Text('Checklist'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleAddChecklist();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.audiotrack, color: Colors.deepPurple),
-                title: const Text('Audio File'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleAddAudio();
-                },
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -477,8 +511,8 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
       order: items.length,
       metadata: {
         'items': [
-          {'label': 'Task 1', 'done': false},
-          {'label': 'Task 2', 'done': false},
+          {'title': 'Task 1', 'checked': false},
+          {'title': 'Task 2', 'checked': false},
         ],
       },
     );
@@ -493,39 +527,317 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
     print("Audio tapped");
   }
 
+  void _handleAddSeparator() {
+    final newItem = TabContentItem(
+      id: uuid.v4(),
+      type: TabContentType.separator,
+      title: 'Morning Routine', // Default label, can be edited later
+      order: items.length,
+      metadata: {
+        'label': 'Morning Routine',
+      },
+    );
+    _tabManager.addItem(widget.tabName, newItem);
+    setState(() {
+      items = _tabManager.getItems(widget.tabName);
+    });
+  }
+
+  void _handleAddAudioPlaylist() {
+    final newItem = TabContentItem(
+      id: UniqueKey().toString(),
+      type: TabContentType.audioPlaylist,
+      title: 'My Audio Playlist',
+      order: items.length,
+      metadata: {
+        'audios': [], // start empty; populate later
+      },
+    );
+    _tabManager.addItem(widget.tabName, newItem);
+    setState(() {
+      items = _tabManager.getItems(widget.tabName);
+    });
+  }
+
+  void _handleAddReminder() {
+    final newItem = TabContentItem(
+      id: uuid.v4(),
+      type: TabContentType.reminder,
+      title: 'Reminder',
+      order: items.length,
+      metadata: {
+        'time': '08:00', // default reminder time
+        'note': 'Your reminder text here',
+      },
+    );
+
+    _tabManager.addItem(widget.tabName, newItem);
+    setState(() {
+      items = _tabManager.getItems(widget.tabName);
+    });
+  }
+
+  void _showEditReminderDialog(TabContentItem item) async {
+    final TextEditingController noteController =
+        TextEditingController(text: item.metadata?['note'] ?? '');
+    TimeOfDay initialTime = _parseTime(item.metadata?['time']) ??
+        const TimeOfDay(hour: 8, minute: 0);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Reminder'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: noteController,
+                decoration: const InputDecoration(labelText: 'Reminder Note'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.access_time),
+                label: const Text('Pick Time'),
+                onPressed: () async {
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: initialTime,
+                  );
+                  if (picked != null) {
+                    initialTime = picked;
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(context),
+            ),
+            ElevatedButton(
+              child: const Text('Save'),
+              onPressed: () {
+                final updatedItem = item.copyWith(
+                  metadata: {
+                    'note': noteController.text,
+                    'time': _formatTimeOfDay(initialTime),
+                  },
+                );
+                _tabManager.updateItem(widget.tabName, updatedItem);
+                setState(() {
+                  items = _tabManager.getItems(widget.tabName);
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  TimeOfDay? _parseTime(String? timeStr) {
+    if (timeStr == null) return null;
+    final parts = timeStr.split(':');
+    if (parts.length != 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  String _formatTimeOfDay(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Expanded(
-          child: ReorderableListView.builder(
-            itemCount: items.length,
-            onReorder: _updateOrder,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return ListTile(
-                key: ValueKey(item.id),
-                title: Text(item.title),
-                subtitle: Text(item.type.name),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _removeItem(item.id),
-                ),
-              );
-            },
+          child: Material(
+            color: Colors.white,
+            child: ReorderableListView.builder(
+                itemCount: items.length,
+                onReorder: _updateOrder,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+
+                  if (item.type == TabContentType.separator) {
+                    return Column(
+                      key: ValueKey(item.id),
+                      children: [
+                        const Divider(
+                            thickness: 2, height: 0, color: Colors.deepPurple),
+                        ListTile(
+                          tileColor: Colors.deepPurple.shade50,
+                          title: Text(
+                            item.metadata?['label'] ?? 'Separator',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepPurple,
+                              fontSize: 16,
+                            ),
+                          ),
+                          trailing: PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert),
+                            onSelected: (value) async {
+                              if (value == 'rename') {
+                                final newLabel = await showDialog<String>(
+                                  context: context,
+                                  builder: (context) {
+                                    String editedLabel =
+                                        item.metadata?['label'] ?? 'Separator';
+                                    return AlertDialog(
+                                      title: const Text("Rename Separator"),
+                                      content: TextField(
+                                        autofocus: true,
+                                        controller: TextEditingController(
+                                            text: editedLabel),
+                                        onChanged: (value) =>
+                                            editedLabel = value,
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context)
+                                              .pop(editedLabel),
+                                          child: const Text("Save"),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+
+                                if (newLabel != null && newLabel.isNotEmpty) {
+                                  final updatedItem = item.copyWith(
+                                    metadata: {
+                                      ...?item.metadata,
+                                      'label': newLabel
+                                    },
+                                  );
+                                  _tabManager.updateItem(
+                                      widget.tabName, updatedItem);
+
+                                  setState(() {
+                                    items =
+                                        _tabManager.getItems(widget.tabName);
+                                  });
+                                }
+                              } else if (value == 'delete') {
+                                _removeItem(item.id);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem<String>(
+                                value: 'rename',
+                                child: Text('Rename'),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  if (item.type == TabContentType.audioPlaylist) {
+                    return ListTile(
+                      key: ValueKey(item.id),
+                      tileColor: Colors.deepPurple.shade50,
+                      title: Text(
+                        item.title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepPurple),
+                      ),
+                      subtitle: const Text('Audio Playlist'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _removeItem(item.id),
+                      ),
+                    );
+                  }
+                  if (item.type == TabContentType.reminder) {
+                    return ListTile(
+                      key: ValueKey(item.id),
+                      leading: const Icon(Icons.alarm),
+                      title: Text(item.metadata?['note'] ?? 'Reminder'),
+                      subtitle:
+                          Text('Time: ${item.metadata?['time'] ?? '--:--'}'),
+                      trailing: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _showEditReminderDialog(item);
+                          } else if (value == 'delete') {
+                            _removeItem(item.id);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                              value: 'edit', child: Text('Edit')),
+                          const PopupMenuItem(
+                              value: 'delete', child: Text('Delete')),
+                        ],
+                      ),
+                    );
+                  }
+                  if (item.type == TabContentType.checklist) {
+                    return ChecklistWidget(
+                      key: ValueKey(item.id),
+                      item: item,
+                      onUpdate: (updatedItem) {
+                        _tabManager.updateItem(widget.tabName, updatedItem);
+                        setState(() {
+                          items = _tabManager.getItems(
+                              widget.tabName); // force re-read from Hive
+                        });
+                      },
+                      onDelete: () {
+                        _removeItem(item.id);
+                      },
+                    );
+                  }
+
+                  // 🟩 Default rendering for all other content types
+                  return ListTile(
+                    key: ValueKey(item.id),
+                    title: Text(item.title),
+                    subtitle: Text(item.type.name),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _removeItem(item.id),
+                    ),
+                  );
+                }),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.add),
-            label: const Text('Add Elements'),
-            onPressed: () {
-              _showAddItemModal(context);
-            },
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-              //backgroundColor: Colors.deepPurple,
+        Container(
+          color: Colors.white,
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('Add Elements'),
+              onPressed: () {
+                _showAddItemModal(context);
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+                //backgroundColor: Colors.white,
+              ),
             ),
           ),
         ),
