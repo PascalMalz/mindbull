@@ -107,18 +107,50 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            // Header with options
+            // Header with options and compact add button
             Row(
               children: [
                 Expanded(
                   child: Text(
                     checklistTitle,
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16, // reduced
+                      fontWeight: FontWeight.w600,
                       color: Colors.deepPurple,
                     ),
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add, size: 20),
+                  onPressed: () {
+                    final controller = TextEditingController();
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text("Add Checklist Item"),
+                        content: TextField(
+                          controller: controller,
+                          decoration: const InputDecoration(
+                            labelText: "Item title",
+                          ),
+                          autofocus: true,
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Cancel"),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              _addItem(controller.text);
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Add"),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 PopupMenuButton<String>(
                   onSelected: (value) {
@@ -128,16 +160,16 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
                       if (widget.onDelete != null) widget.onDelete!();
                     }
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
                         value: 'rename', child: Text('Rename Checklist')),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                         value: 'delete', child: Text('Delete Checklist')),
                   ],
                 )
               ],
             ),
-            const Divider(),
+            const Divider(height: 8),
             ReorderableListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -153,8 +185,11 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
               itemBuilder: (context, index) {
                 final item = checklistItems[index];
                 return ListTile(
+                  dense: true,
+                  visualDensity: const VisualDensity(vertical: -2), // compact
                   key: ValueKey('$index-${item['title']}'),
-                  title: Text(item['title'] ?? 'Unnamed'),
+                  title: Text(item['title'] ?? 'Unnamed',
+                      style: const TextStyle(fontSize: 14)),
                   leading: Checkbox(
                     value: item['checked'],
                     onChanged: (val) {
@@ -165,6 +200,7 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
                     },
                   ),
                   trailing: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20),
                     onSelected: (value) {
                       if (value == 'rename') {
                         _showRenameDialog(index);
@@ -172,43 +208,9 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
                         _removeItem(index);
                       }
                     },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                          value: 'rename', child: Text('Rename')),
-                      const PopupMenuItem(
-                          value: 'delete', child: Text('Delete')),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text("Add Item"),
-              onPressed: () {
-                final controller = TextEditingController();
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text("Add Checklist Item"),
-                    content: TextField(
-                      controller: controller,
-                      decoration:
-                          const InputDecoration(labelText: "Item title"),
-                      autofocus: true,
-                    ),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("Cancel")),
-                      TextButton(
-                        onPressed: () {
-                          _addItem(controller.text);
-                          Navigator.pop(context);
-                        },
-                        child: const Text("Add"),
-                      ),
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'rename', child: Text('Rename')),
+                      PopupMenuItem(value: 'delete', child: Text('Delete')),
                     ],
                   ),
                 );

@@ -2,7 +2,7 @@ git add .
 git commit -m "Your commit message"
 git push
 
-git commit -m "Favorites logic and add"
+git commit -m "Add different elements to daily view including full functional checklist"
 
 run test file:
 flutter run -t lib/test_main.dart > logs.txt

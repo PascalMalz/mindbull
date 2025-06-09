@@ -5,13 +5,24 @@
     <uses-permission android:name="android.permission.INTERNET"        />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-
+<!-- For Notifications: -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
     <application
         android:label="mindbull"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
         android:foregroundServiceType="mediaPlayback">
+
+<!-- For Notifications: -->
+        <receiver
+            android:name="me.carda.awesome_notifications.notifications.receivers.NotificationReceiver"
+            android:exported="true" />
+        <receiver
+            android:name="me.carda.awesome_notifications.notifications.receivers.ActionReceiver"
+            android:exported="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -37,6 +37,7 @@ import 'package:mindbull/provider/single_image_provider.dart';
 import 'package:mindbull/provider/single_video_provider.dart';
 import 'package:mindbull/provider/user_data_provider.dart';
 import 'package:mindbull/widgets/loginScreenWidget.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api/api_auth_native_login.dart';
 import 'api/api_auth_nativ_registration.dart';
@@ -57,6 +58,7 @@ import 'models/personal_growth_characteristic_adapter.dart';
 import 'notifier/scroll_position_notifier.dart';
 import 'provider/record_list_provider.dart';
 import 'provider/journal_provider.dart';
+
 //todo implement Dependency Injection Framework to serve instances of classes over the application
 //todo implement State Management Solution
 //todo write testing for everything
@@ -135,7 +137,20 @@ Future<void> main() async {
   await Hive.openBox('favorites');
 
   var journalBox = await Hive.openBox<String>('journalBox');
-
+  AwesomeNotifications().initialize(
+    null,
+    [
+      NotificationChannel(
+        channelKey: 'basic_channel',
+        channelName: 'Basic Notifications',
+        channelDescription: 'Notification channel for basic tests',
+        defaultColor: const Color(0xFF9D50DD),
+        importance: NotificationImportance.High,
+        channelShowBadge: true,
+      ),
+    ],
+    debug: true,
+  );
   print('main() called');
   print(StackTrace.current);
   try {

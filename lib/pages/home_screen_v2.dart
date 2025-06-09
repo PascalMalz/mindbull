@@ -1,4 +1,7 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:mindbull/main.dart';
 import 'package:mindbull/models/tab_content_item.dart';
 import 'package:mindbull/pages/favorites_picker_screen.dart';
 import 'package:mindbull/pages/favorites_screen.dart';
@@ -575,64 +578,80 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
     setState(() {
       items = _tabManager.getItems(widget.tabName);
     });
+
+    _scheduleReminderNotification(newItem); // 🔔 Schedule the reminder
   }
 
-  void _showEditReminderDialog(TabContentItem item) async {
+  Future<bool?> _showEditReminderDialog(TabContentItem item) async {
     final TextEditingController noteController =
         TextEditingController(text: item.metadata?['note'] ?? '');
     TimeOfDay initialTime = _parseTime(item.metadata?['time']) ??
         const TimeOfDay(hour: 8, minute: 0);
+    TimeOfDay? pickedTime = initialTime;
 
-    await showDialog(
+    return await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Reminder'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: noteController,
-                decoration: const InputDecoration(labelText: 'Reminder Note'),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Reminder'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: noteController,
+                    decoration:
+                        const InputDecoration(labelText: 'Reminder Note'),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Scheduled Time: ${pickedTime?.format(context) ?? 'Not selected'}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.access_time),
+                    label: const Text('Pick Time'),
+                    onPressed: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: pickedTime ?? initialTime,
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          pickedTime = picked;
+                        });
+                      }
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.access_time),
-                label: const Text('Pick Time'),
-                onPressed: () async {
-                  final picked = await showTimePicker(
-                    context: context,
-                    initialTime: initialTime,
-                  );
-                  if (picked != null) {
-                    initialTime = picked;
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            ElevatedButton(
-              child: const Text('Save'),
-              onPressed: () {
-                final updatedItem = item.copyWith(
-                  metadata: {
-                    'note': noteController.text,
-                    'time': _formatTimeOfDay(initialTime),
+              actions: [
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.pop(context, false),
+                ),
+                ElevatedButton(
+                  child: const Text('Save'),
+                  onPressed: () {
+                    final updatedItem = item.copyWith(
+                      metadata: {
+                        'note': noteController.text,
+                        'time': _formatTimeOfDay(pickedTime!),
+                      },
+                    );
+                    _tabManager.updateItem(widget.tabName, updatedItem);
+                    _scheduleReminderNotification(updatedItem);
+                    Navigator.pop(context, true); // Return success
                   },
-                );
-                _tabManager.updateItem(widget.tabName, updatedItem);
-                setState(() {
-                  items = _tabManager.getItems(widget.tabName);
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -652,6 +671,54 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  // Schedules a daily reminder using awesome_notifications
+  Future<void> _scheduleReminderNotification(TabContentItem item) async {
+    final timeStr = item.metadata?['time'];
+    final note = item.metadata?['note'] ?? 'Reminder';
+
+    if (timeStr == null) return;
+
+    final timeParts = timeStr.split(':');
+    final hour = int.tryParse(timeParts[0] ?? '');
+    final minute = int.tryParse(timeParts[1] ?? '');
+
+    if (hour == null || minute == null) return;
+
+    final now = DateTime.now();
+    var scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
+
+    // If the scheduled time is in the past, schedule for the next day
+    if (scheduledTime.isBefore(now)) {
+      scheduledTime = scheduledTime.add(const Duration(days: 1));
+    }
+
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: item.id.hashCode,
+        channelKey: 'basic_channel',
+        title: 'Mindbull Reminder',
+        body: note,
+        notificationLayout: NotificationLayout.Default,
+      ),
+      schedule: NotificationCalendar(
+        hour: scheduledTime.hour,
+        minute: scheduledTime.minute,
+        second: 0,
+        millisecond: 0,
+        repeats: true, // Makes it a daily reminder
+      ),
+    );
+    // Show confirmation SnackBar
+    final timeFormatted =
+        "${scheduledTime.hour.toString().padLeft(2, '0')}:${scheduledTime.minute.toString().padLeft(2, '0')}";
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Reminder set for $timeFormatted: "$note"'),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   @override
@@ -772,27 +839,46 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
                   if (item.type == TabContentType.reminder) {
                     return ListTile(
                       key: ValueKey(item.id),
-                      leading: const Icon(Icons.alarm),
-                      title: Text(item.metadata?['note'] ?? 'Reminder'),
-                      subtitle:
-                          Text('Time: ${item.metadata?['time'] ?? '--:--'}'),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            _showEditReminderDialog(item);
-                          } else if (value == 'delete') {
-                            _removeItem(item.id);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                              value: 'edit', child: Text('Edit')),
-                          const PopupMenuItem(
-                              value: 'delete', child: Text('Delete')),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 0),
+                      leading: const Icon(Icons.alarm, size: 20),
+                      title: Text(
+                        item.metadata?['note'] ?? 'Reminder',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(item.metadata?['time'] ?? '--:--',
+                              style: const TextStyle(fontSize: 13)),
+                          const SizedBox(width: 6),
+                          PopupMenuButton<String>(
+                            onSelected: (value) async {
+                              if (value == 'edit') {
+                                final updated =
+                                    await _showEditReminderDialog(item);
+                                if (updated == true) {
+                                  setState(() {
+                                    items =
+                                        _tabManager.getItems(widget.tabName);
+                                  });
+                                }
+                              } else if (value == 'delete') {
+                                _removeItem(item.id);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                  value: 'edit', child: Text('Edit')),
+                              const PopupMenuItem(
+                                  value: 'delete', child: Text('Delete')),
+                            ],
+                          ),
                         ],
                       ),
                     );
                   }
+
                   if (item.type == TabContentType.checklist) {
                     return ChecklistWidget(
                       key: ValueKey(item.id),
