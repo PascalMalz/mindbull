@@ -184,33 +184,42 @@ class _ChecklistWidgetState extends State<ChecklistWidget> {
               },
               itemBuilder: (context, index) {
                 final item = checklistItems[index];
-                return ListTile(
-                  dense: true,
-                  visualDensity: const VisualDensity(vertical: -2), // compact
+                return Padding(
                   key: ValueKey('$index-${item['title']}'),
-                  title: Text(item['title'] ?? 'Unnamed',
-                      style: const TextStyle(fontSize: 14)),
-                  leading: Checkbox(
-                    value: item['checked'],
-                    onChanged: (val) {
-                      setState(() {
-                        item['checked'] = val;
-                      });
-                      _updateParent();
-                    },
-                  ),
-                  trailing: PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, size: 20),
-                    onSelected: (value) {
-                      if (value == 'rename') {
-                        _showRenameDialog(index);
-                      } else if (value == 'delete') {
-                        _removeItem(index);
-                      }
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(value: 'rename', child: Text('Rename')),
-                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Checkbox(
+                        value: item['checked'],
+                        onChanged: (val) {
+                          setState(() {
+                            item['checked'] = val;
+                          });
+                          _updateParent();
+                        },
+                      ),
+                      Expanded(
+                        child: Text(
+                          item['title'] ?? 'Unnamed',
+                          style: const TextStyle(fontSize: 15),
+                          softWrap: true,
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, size: 20),
+                        onSelected: (value) {
+                          if (value == 'rename') {
+                            _showRenameDialog(index);
+                          } else if (value == 'delete') {
+                            _removeItem(index);
+                          }
+                        },
+                        itemBuilder: (context) => const [
+                          PopupMenuItem(value: 'rename', child: Text('Rename')),
+                          PopupMenuItem(value: 'delete', child: Text('Delete')),
+                        ],
+                      ),
                     ],
                   ),
                 );

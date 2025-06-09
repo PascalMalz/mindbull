@@ -29,7 +29,8 @@ class _HomeScreenV2State extends State<HomeScreenV2>
     with TickerProviderStateMixin {
   late TabController _tabController;
   final List<String> categories = [
-    'Daily',
+    "Today's Workout",
+    'My Daily',
     'Affirmation',
     'Visualization',
     'Reframing',
@@ -109,12 +110,14 @@ class _HomeScreenV2State extends State<HomeScreenV2>
               indicatorColor: Colors.deepPurple,
               labelColor: Colors.deepPurple,
               unselectedLabelColor: Colors.black,
+              padding: EdgeInsets.only(left: 2),
+              labelPadding: EdgeInsets.symmetric(horizontal: 12),
               tabs: [
                 ...categories.map((category) => Tab(text: category)),
                 const Tab(
                   child: Icon(
                     Icons.add,
-                    size: 24,
+                    size: 30,
                     color: Colors.deepPurple,
                   ),
                 ),
@@ -130,7 +133,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: category == 'Daily'
+                          child: category == 'My Daily'
                               ? TabContentEditorView(tabName: category)
                               : ExerciseDisplayScreen(
                                   exerciseType: category,

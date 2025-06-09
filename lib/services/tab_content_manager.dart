@@ -1,29 +1,74 @@
 import 'package:hive/hive.dart';
-import 'package:mindbull/models/tab_content_item.dart';
+import 'package:uuid/uuid.dart';
+import '../models/tab_content_item.dart';
 
+/// Tab metadata manager for tracking tab names separately from content.
 class TabContentManager {
-  final Box<List> _box = Hive.box<List>('tabContent');
+  final Box<List> _contentBox = Hive.box<List>('tabContent');
+  final Box<String> _metadataBox =
+      Hive.box<String>('tabMetadata'); // tabId -> name
+  final uuid = Uuid();
 
-  List<TabContentItem> getItems(String tabName) {
-    final raw = _box.get(tabName) ?? [];
+  /// Returns all tab IDs
+  List<String> getAllTabIds() {
+    return _metadataBox.keys.cast<String>().toList();
+  }
+
+  /// Returns the display name for a tab
+  String getTabName(String tabId) {
+    return _metadataBox.get(tabId) ?? 'Unnamed Tab';
+  }
+
+  /// Updates the display name for a tab
+  void renameTab(String tabId, String newName) {
+    _metadataBox.put(tabId, newName);
+  }
+
+  /// Returns a map of all tabId -> tabName
+  Map<String, String> getAllTabNames() {
+    return Map.fromEntries(
+      _metadataBox.keys.map((k) => MapEntry(k, _metadataBox.get(k)!)),
+    );
+  }
+
+  /// Create a new tab and return its generated ID
+  String createTab(String tabName) {
+    final id = uuid.v4();
+    _metadataBox.put(id, tabName);
+    _contentBox.put(id, []);
+    return id;
+  }
+
+  /// Delete a tab and its content
+  void deleteTab(String tabId) {
+    _metadataBox.delete(tabId);
+    _contentBox.delete(tabId);
+  }
+
+  /// Get items by tab ID
+  List<TabContentItem> getItems(String tabId) {
+    final raw = _contentBox.get(tabId) ?? [];
     return raw
         .map((e) => TabContentItem.fromJson(Map<String, dynamic>.from(e)))
         .toList()
       ..sort((a, b) => a.order.compareTo(b.order));
   }
 
-  void saveItems(String tabName, List<TabContentItem> items) {
-    _box.put(tabName, items.map((e) => e.toJson()).toList());
+  /// Save all items under tab ID
+  void saveItems(String tabId, List<TabContentItem> items) {
+    _contentBox.put(tabId, items.map((e) => e.toJson()).toList());
   }
 
-  void addItem(String tabName, TabContentItem item) {
-    final items = getItems(tabName);
+  /// Add an item to a tab
+  void addItem(String tabId, TabContentItem item) {
+    final items = getItems(tabId);
     final updated = [...items, item.copyWith(order: items.length)];
-    saveItems(tabName, updated);
+    saveItems(tabId, updated);
   }
 
-  void reorderItems(String tabName, int oldIndex, int newIndex) {
-    final items = getItems(tabName);
+  /// Reorder items in a tab
+  void reorderItems(String tabId, int oldIndex, int newIndex) {
+    final items = getItems(tabId);
     final item = items.removeAt(oldIndex);
     items.insert(newIndex, item);
 
@@ -31,19 +76,21 @@ class TabContentManager {
       items[i] = items[i].copyWith(order: i);
     }
 
-    saveItems(tabName, items);
+    saveItems(tabId, items);
   }
 
-  void removeItem(String tabName, String itemId) {
-    final items = getItems(tabName)..removeWhere((e) => e.id == itemId);
-    saveItems(tabName, items);
+  /// Remove an item by ID
+  void removeItem(String tabId, String itemId) {
+    final items = getItems(tabId)..removeWhere((e) => e.id == itemId);
+    saveItems(tabId, items);
   }
 
-  void updateItem(String tabName, TabContentItem updatedItem) {
-    final items = getItems(tabName).map((item) {
+  /// Update a specific item
+  void updateItem(String tabId, TabContentItem updatedItem) {
+    final items = getItems(tabId).map((item) {
       return item.id == updatedItem.id ? updatedItem : item;
     }).toList();
 
-    saveItems(tabName, items);
+    saveItems(tabId, items);
   }
 }

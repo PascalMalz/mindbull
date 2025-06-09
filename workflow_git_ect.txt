@@ -2,7 +2,15 @@ git add .
 git commit -m "Your commit message"
 git push
 
-git commit -m "Add different elements to daily view including full functional checklist"
+git commit -m "Added fully functional Reminder into daily tab"
 
 run test file:
 flutter run -t lib/test_main.dart > logs.txt
+
+
+connect remote
+
+adb devices
+adb tcpip 5555
+adb shell ip route
+adb connect 192.168.0.91:5555

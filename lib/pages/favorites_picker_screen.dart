@@ -21,7 +21,12 @@ class _FavoritesPickerScreenState extends State<FavoritesPickerScreen> {
   bool isLoading = true;
   String selectedFilter = 'All';
 
-  final filters = ['All', 'exercise', 'audio', 'post'];
+  final filters = [
+    {'label': 'All', 'value': 'All'},
+    {'label': 'Exercise', 'value': 'exercise'},
+    {'label': 'Audio', 'value': 'audio'},
+    {'label': 'Post', 'value': 'post'},
+  ];
 
   @override
   void initState() {
@@ -74,14 +79,15 @@ class _FavoritesPickerScreenState extends State<FavoritesPickerScreen> {
                   padding: const EdgeInsets.all(8),
                   child: Row(
                     children: filters.map((filter) {
+                      final isSelected = selectedFilter == filter['value'];
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6.0),
                         child: ChoiceChip(
-                          label: Text(filter),
-                          selected: selectedFilter == filter,
+                          label: Text(filter['label']!),
+                          selected: isSelected,
                           onSelected: (_) {
                             setState(() {
-                              selectedFilter = filter;
+                              selectedFilter = filter['value']!;
                               selectedIndexes.clear();
                             });
                           },
