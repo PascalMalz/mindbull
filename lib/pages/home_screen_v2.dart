@@ -1,11 +1,16 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:mindbull/api/api_tab_content_service.dart';
+import 'package:mindbull/api/tab_api.dart';
+import 'package:mindbull/models/exercise.dart';
+import 'package:mindbull/models/tab_content_link.dart';
+import 'package:mindbull/services/tab_storage_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:mindbull/main.dart';
 import 'package:mindbull/models/tab_content_item.dart';
 import 'package:mindbull/pages/favorites_picker_screen.dart';
 import 'package:mindbull/pages/favorites_screen.dart';
-import 'package:mindbull/services/tab_content_manager.dart';
+
 import 'package:mindbull/widgets/checklist_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:mindbull/pages/goals_standalone.dart';
@@ -27,28 +32,131 @@ class HomeScreenV2 extends StatefulWidget {
 
 class _HomeScreenV2State extends State<HomeScreenV2>
     with TickerProviderStateMixin {
-  late TabController _tabController;
-  final List<String> categories = [
-    "Today's Workout",
-    'My Daily',
-    'Affirmation',
-    'Visualization',
-    'Reframing',
-    'Meditation',
-    'Gratitude',
-    'Motivation',
-    'Acceptance',
+  TabController? _tabController;
+  bool _tabsLoadedAfterLogin = false;
+  bool _startedLoadingTabs = false;
+  bool _isLoadingTabs = true;
+  final TabStorageService _tabManager = TabStorageService();
+  List<String> tabIds = [];
+
+  final List<String> defaultTabNames = [
+    "My Daily",
+    "Affirmation",
+    "Visualization",
+    "Reframing",
+    "Meditation",
+    "Gratitude",
+    "Motivation",
+    "Acceptance",
   ];
+
+/*   void initDefaultTabsIfEmpty() {
+    final existing = _tabManager.getAllTabIds();
+    if (existing.isEmpty) {
+      for (var name in defaultTabNames) {
+        _tabManager.createTab(name);
+      }
+    }
+  } */
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: categories.length + 1, vsync: this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final user =
+          Provider.of<UserDataProvider>(context, listen: false).currentUser;
+      if (user != null && !_startedLoadingTabs) {
+        _startedLoadingTabs = true;
+        print("📥 loadDefaultTabs() triggered");
+        await loadDefaultTabs(); // Will setState internally
+      } else {
+        print("🧩 setState: triggering UI after loading from INIT!");
+        setState(() {
+          _isLoadingTabs = false;
+        });
+        print("✅ setState INIT completed");
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final user = Provider.of<UserDataProvider>(context).currentUser;
+
+    if (user != null && !_startedLoadingTabs) {
+      _startedLoadingTabs = true;
+      loadDefaultTabs();
+    }
+  }
+
+  void _initTabController() {
+    print("🛠 _initTabController called");
+    final latestTabIds = _tabManager.getAllTabIds();
+    print("🧩 _initTabController → fetched tabIds from Hive: $latestTabIds");
+
+    if (latestTabIds.isEmpty) {
+      print(
+          "⚠️ _initTabController → tab list is empty, skipping controller init");
+      return;
+    }
+
+    final tabCount = latestTabIds.length + 1;
+
+    _tabController?.dispose();
+    _tabController = TabController(length: tabCount, vsync: this);
+
+    tabIds = latestTabIds;
+
+    print("✅ _initTabController → CREATED: tabCount=$tabCount, tabIds=$tabIds");
+  }
+
+  Future<void> loadDefaultTabs() async {
+    print("📥 loadDefaultTabs() triggered");
+    try {
+      final defaultTabs = await TabApi().fetchDefaultTabs();
+      print("📦 Tabs fetched from API: $defaultTabs");
+
+      await _tabManager.saveTabs(defaultTabs);
+      print("💾 Tabs saved to Hive");
+
+      final allTabIds = _tabManager.getAllTabIds();
+      print("📤 Read back from Hive: tabIds=$allTabIds");
+
+      tabIds = allTabIds;
+      _initTabController();
+      print("🧩 setState: triggering UI after loading from loadDefaultTabs");
+      setState(() {
+        _tabsLoadedAfterLogin = true;
+        _isLoadingTabs = false;
+      });
+      print("✅ setState completed from loadDefaultTabs");
+      // ✅ Force TabController sync one last time
+      Future.microtask(() {
+        print("🔁 Final microtask sync...");
+        _initTabController();
+        print(
+            "🧩 setState: triggering UI after loading from loadDefaultTabs microtask");
+        setState(() {
+          tabIds = _tabManager.getAllTabIds(); // 👈 force tabIds refresh too
+          _tabsLoadedAfterLogin = true;
+          _isLoadingTabs = false;
+        });
+        print("✅ setState completed in loadDefaultTabs microtask");
+      });
+    } catch (e, stack) {
+      print("❌ Exception in loadDefaultTabs: $e");
+      print("📉 Stacktrace: $stack");
+      setState(() {
+        _isLoadingTabs = false;
+      });
+    }
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -93,127 +201,171 @@ class _HomeScreenV2State extends State<HomeScreenV2>
     );
   }
 
+  void _renameTab(BuildContext context, String tabId) async {
+    final currentName = _tabManager.getTabName(tabId);
+    final controller = TextEditingController(text: currentName);
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Rename Tab"),
+        content: TextField(controller: controller),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text("Save")),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    print(
+        "🔥 build() called. _isLoadingTabs=$_isLoadingTabs, _tabController=${_tabController?.length}, tabIds=$tabIds");
+    if (_tabController != null) {
+      print(
+          "🧪 TabController length: ${_tabController!.length}, expected: ${tabIds.length + 1}");
+    } else {
+      print('tabcontroller is null!!!');
+    }
+    final user = Provider.of<UserDataProvider>(context).currentUser;
+
+    print("🧠 Rebuilding HomeScreenV2");
+    print("🧠 Logged in user: ${user?.username ?? "none"}");
+    print("🧠 _tabsLoadedAfterLogin: $_tabsLoadedAfterLogin");
+    // ✅ SAFE PRINTING
+    for (final id in tabIds) {
+      final name = _tabManager.getTabName(id);
+      print("→ $id = $name");
+    }
     return CommonBottomNavigationBar(
       currentIndex: 0,
-      child: Scaffold(
-        appBar: buildAppBar(context),
-        endDrawer: buildRightBar(),
-        backgroundColor: Colors.white,
-        body: Column(
-          children: [
-            const SizedBox(height: 0),
-            TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              indicatorColor: Colors.deepPurple,
-              labelColor: Colors.deepPurple,
-              unselectedLabelColor: Colors.black,
-              padding: EdgeInsets.only(left: 2),
-              labelPadding: EdgeInsets.symmetric(horizontal: 12),
-              tabs: [
-                ...categories.map((category) => Tab(text: category)),
-                const Tab(
-                  child: Icon(
-                    Icons.add,
-                    size: 30,
-                    color: Colors.deepPurple,
+      builder: (context) {
+        return Scaffold(
+          appBar: buildAppBar(context),
+          endDrawer: buildRightBar(),
+          backgroundColor: Colors.white,
+          body: Column(
+            children: [
+              const SizedBox(height: 0),
+              if (_tabController == null)
+                const Expanded(
+                  child: Center(
+                    child: CircularProgressIndicator(),
                   ),
+                )
+              else
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  indicatorColor: Colors.deepPurple,
+                  labelColor: Colors.deepPurple,
+                  unselectedLabelColor: Colors.black,
+                  padding: const EdgeInsets.only(left: 2),
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  tabs: [
+                    ...tabIds.map((tabId) {
+                      final name = _tabManager.getTabName(tabId);
+                      print("🔠 Rendering TabBar tab ➜ ID=$tabId ➜ Name=$name");
+
+                      return GestureDetector(
+                        onLongPress: () => _renameTab(context, tabId),
+                        child: Tab(text: name),
+                      );
+                    }),
+                    const Tab(
+                        icon: Icon(Icons.add,
+                            size: 28, color: Colors.deepPurple)),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 0),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  ...categories.map((category) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: category == 'My Daily'
-                              ? TabContentEditorView(tabName: category)
-                              : ExerciseDisplayScreen(
-                                  exerciseType: category,
-                                  autoplayEnabled: false,
+              const SizedBox(height: 0),
+              Builder(builder: (context) {
+                print(
+                    "🧪 build() called: _isLoadingTabs=$_isLoadingTabs, _tabController=${_tabController?.length}, tabIds=${tabIds.length}");
+                return Expanded(
+                  child: (_isLoadingTabs ||
+                          _tabController == null ||
+                          tabIds.isEmpty)
+                      ? const Center(child: CircularProgressIndicator())
+                      : TabBarView(
+                          controller: _tabController,
+                          children: List.generate(tabIds.length + 1, (index) {
+                            if (index >= tabIds.length) {
+                              return Center(
+                                child: ElevatedButton.icon(
+                                  icon: const Icon(Icons.add),
+                                  label: const Text("Add New Tab"),
+                                  onPressed: () {
+                                    print("➕ Add new tab clicked");
+                                    //_showAddTabDialog(); // your custom dialog
+                                  },
                                 ),
-                        ),
-                        //const Divider(height: 1, color: Colors.grey),
-                        // Journal Toggle Button
-                        InkWell(
-                          onTap: () {
-                            _showJournalBottomSheet(context, category);
-                          },
-                          child: Container(
-                            height: 50, // Height of the container
-                            decoration: BoxDecoration(
-                              color: Colors.white, // Background color
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(
-                                    20), // Rounded top-left corner
-                                topRight: Radius.circular(
-                                    20), // Rounded top-right corner
-                              ),
-                              border: Border(
-                                top: BorderSide(
-                                    color: Colors.grey.shade300,
-                                    width: 1), // Top border
-                                left: BorderSide(
-                                    color: Colors.grey.shade300,
-                                    width: 1), // Left border
-                                right: BorderSide(
-                                    color: Colors.grey.shade300,
-                                    width: 1), // Right border
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              );
+                            }
+
+                            final tabId = tabIds[index];
+                            final name = _tabManager.getTabName(tabId);
+                            print('🔠 Building tab $index → $tabId');
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Open Journal",
-                                  style: TextStyle(
-                                    color: Colors.deepPurple,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                Expanded(
+                                  child: TabContentEditorView(tabId: tabId),
+                                ),
+                                InkWell(
+                                  onTap: () =>
+                                      _showJournalBottomSheet(context, name),
+                                  child: Container(
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        topRight: Radius.circular(20),
+                                      ),
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: const [
+                                        Text(
+                                          "Open Journal",
+                                          style: TextStyle(
+                                            color: Colors.deepPurple,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Icon(Icons.edit,
+                                            color: Colors.deepPurple),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.edit,
-                                    color: Colors.deepPurple),
+                                const Divider(
+                                  endIndent: 12,
+                                  indent: 12,
+                                  height: 1,
+                                  color: Color.fromARGB(123, 158, 158, 158),
+                                ),
                               ],
-                            ),
-                          ),
+                            );
+                          }),
                         ),
-
-                        //add divider line
-                        const Divider(
-                          endIndent: 12,
-                          indent: 12,
-                          height: 1,
-                          color: Color.fromARGB(123, 158, 158, 158),
-                        ),
-                      ],
-                    );
-                  }),
-                  // Add a separate screen for "+" tab
-                  Center(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: const Text("Add New Tab"),
-                      onPressed: () {
-                        // Handle adding a new tab logic
-                        print("Add new tab clicked");
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -346,37 +498,71 @@ class _HomeScreenV2State extends State<HomeScreenV2>
 }
 
 class TabContentEditorView extends StatefulWidget {
-  final String tabName;
+  final String tabId;
 
-  const TabContentEditorView({super.key, required this.tabName});
+  const TabContentEditorView({super.key, required this.tabId});
 
   @override
   State<TabContentEditorView> createState() => _TabContentEditorViewState();
 }
 
 class _TabContentEditorViewState extends State<TabContentEditorView> {
-  final TabContentManager _tabManager = TabContentManager();
+  final TabStorageService _tabManager = TabStorageService();
   final uuid = Uuid();
   late List<TabContentItem> items;
+  List<Exercise> exercises = [];
 
   @override
   void initState() {
     super.initState();
-    items = _tabManager.getItems(widget.tabName);
+    _loadTabContent();
+  }
+
+  Future<void> _loadTabContent() async {
+    items = _tabManager.getItems(widget.tabId); // ← Local Hive fallback
+    final api = ApiTabContentService();
+    final List<TabContentLink> links =
+        await api.fetchTabContentLinks(widget.tabId);
+
+    final List<Exercise> loadedExercises = [];
+
+    for (var link in links) {
+      if (link.contentType == 'exercise') {
+        final exercise = Exercise.fromJson(link.contentObject);
+        loadedExercises.add(exercise);
+      }
+      // TODO: handle checklists, reminders, etc.
+    }
+
+    setState(() {
+      exercises = loadedExercises;
+    });
+  }
+
+  final TabApi tabApi = TabApi();
+
+  void loadTabs() async {
+    try {
+      final tabs = await tabApi.fetchDefaultTabs();
+      print("Tabs loaded: $tabs");
+      // Pass to your TabContentManager or UI state handler here
+    } catch (e) {
+      print("Failed to load tabs: $e");
+    }
   }
 
   void _updateOrder(int oldIndex, int newIndex) {
     if (newIndex > oldIndex) newIndex -= 1;
-    _tabManager.reorderItems(widget.tabName, oldIndex, newIndex);
+    _tabManager.reorderItems(widget.tabId, oldIndex, newIndex);
     setState(() {
-      items = _tabManager.getItems(widget.tabName);
+      items = _tabManager.getItems(widget.tabId);
     });
   }
 
   void _removeItem(String id) {
-    _tabManager.removeItem(widget.tabName, id);
+    _tabManager.removeItem(widget.tabId, id);
     setState(() {
-      items = _tabManager.getItems(widget.tabName);
+      items = _tabManager.getItems(widget.tabId);
     });
   }
 
@@ -495,11 +681,11 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
           metadata: item['data'],
         );
 
-        _tabManager.addItem(widget.tabName, tabItem);
+        _tabManager.addItem(widget.tabId, tabItem);
       }
 
       setState(() {
-        items = _tabManager.getItems(widget.tabName);
+        items = _tabManager.getItems(widget.tabId);
       });
     }
   }
@@ -522,9 +708,9 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
         ],
       },
     );
-    _tabManager.addItem(widget.tabName, newItem);
+    _tabManager.addItem(widget.tabId, newItem);
     setState(() {
-      items = _tabManager.getItems(widget.tabName);
+      items = _tabManager.getItems(widget.tabId);
     });
   }
 
@@ -543,9 +729,9 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
         'label': 'Morning Routine',
       },
     );
-    _tabManager.addItem(widget.tabName, newItem);
+    _tabManager.addItem(widget.tabId, newItem);
     setState(() {
-      items = _tabManager.getItems(widget.tabName);
+      items = _tabManager.getItems(widget.tabId);
     });
   }
 
@@ -559,9 +745,9 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
         'audios': [], // start empty; populate later
       },
     );
-    _tabManager.addItem(widget.tabName, newItem);
+    _tabManager.addItem(widget.tabId, newItem);
     setState(() {
-      items = _tabManager.getItems(widget.tabName);
+      items = _tabManager.getItems(widget.tabId);
     });
   }
 
@@ -577,9 +763,9 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
       },
     );
 
-    _tabManager.addItem(widget.tabName, newItem);
+    _tabManager.addItem(widget.tabId, newItem);
     setState(() {
-      items = _tabManager.getItems(widget.tabName);
+      items = _tabManager.getItems(widget.tabId);
     });
 
     _scheduleReminderNotification(newItem); // 🔔 Schedule the reminder
@@ -647,7 +833,7 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
                         'time': _formatTimeOfDay(pickedTime!),
                       },
                     );
-                    _tabManager.updateItem(widget.tabName, updatedItem);
+                    _tabManager.updateItem(widget.tabId, updatedItem);
                     _scheduleReminderNotification(updatedItem);
                     Navigator.pop(context, true); // Return success
                   },
@@ -726,6 +912,7 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
 
   @override
   Widget build(BuildContext context) {
+    print("📦 TabContentEditorView: Loading items for Tab ID=${widget.tabId}");
     return Column(
       children: [
         Expanded(
@@ -795,11 +982,10 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
                                     },
                                   );
                                   _tabManager.updateItem(
-                                      widget.tabName, updatedItem);
+                                      widget.tabId, updatedItem);
 
                                   setState(() {
-                                    items =
-                                        _tabManager.getItems(widget.tabName);
+                                    items = _tabManager.getItems(widget.tabId);
                                   });
                                 }
                               } else if (value == 'delete') {
@@ -862,8 +1048,7 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
                                     await _showEditReminderDialog(item);
                                 if (updated == true) {
                                   setState(() {
-                                    items =
-                                        _tabManager.getItems(widget.tabName);
+                                    items = _tabManager.getItems(widget.tabId);
                                   });
                                 }
                               } else if (value == 'delete') {
@@ -887,10 +1072,10 @@ class _TabContentEditorViewState extends State<TabContentEditorView> {
                       key: ValueKey(item.id),
                       item: item,
                       onUpdate: (updatedItem) {
-                        _tabManager.updateItem(widget.tabName, updatedItem);
+                        _tabManager.updateItem(widget.tabId, updatedItem);
                         setState(() {
                           items = _tabManager.getItems(
-                              widget.tabName); // force re-read from Hive
+                              widget.tabId); // force re-read from Hive
                         });
                       },
                       onDelete: () {

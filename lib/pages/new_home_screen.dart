@@ -1,4 +1,4 @@
-// What this code does:
+/* // What this code does:
 // This code creates a screen with a top menu, a horizontal list of profile pictures, a vertical list of music cards,
 // and a bottom navigation menu with five icons.
 
@@ -567,3 +567,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+ */

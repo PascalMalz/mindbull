@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:mindbull/api/api_follow_user.dart';
+import 'package:mindbull/api/api_sync_service.dart';
 import 'package:mindbull/pages/after_join.dart';
 import 'package:mindbull/pages/audio_library.dart';
 
@@ -23,6 +24,7 @@ import 'package:mindbull/pages/profile.dart';
 import 'package:mindbull/pages/record.dart';
 import 'package:mindbull/pages/reels.dart';
 import 'package:mindbull/pages/start_a_program.dart';
+import 'package:mindbull/services/sync_token_service.dart';
 
 import 'package:provider/provider.dart';
 import 'package:mindbull/Services/directories.dart';
@@ -134,9 +136,22 @@ Future<void> main() async {
   var compositionBox = await Hive.openBox<Composition>('compositionMetadata');
   var characteristicsBox = await Hive.openBox('characteristicsRatingsBox');
   await Hive.openBox<List>('tabContent');
-  await Hive.openBox('favorites');
+  await Hive.openBox<String>('tab_storage');
+  await Hive.openBox<String>('tabContentLinks');
 
+  await Hive.openBox('favorites');
   var journalBox = await Hive.openBox<String>('journalBox');
+
+// Check sync token
+  final token = await ApiSyncService().fetchSyncToken();
+  if (token != null && SyncTokenService().hasChanged(token)) {
+    print("🔁 Sync token changed → reload tab content!");
+    SyncTokenService().saveToken(token);
+
+    // Clear old cached tab content
+    await Hive.box<String>('tab_storage').clear();
+  }
+
   AwesomeNotifications().initialize(
     null,
     [

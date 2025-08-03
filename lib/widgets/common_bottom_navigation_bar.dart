@@ -21,15 +21,14 @@ import '../provider/auth_provider.dart';
 import '../provider/user_data_provider.dart';
 
 class CommonBottomNavigationBar extends StatefulWidget {
-  final Widget child;
+  final Widget Function(BuildContext context)? builder;
   final int currentIndex;
 
   const CommonBottomNavigationBar({
     super.key,
-    required this.child,
     required this.currentIndex,
+    this.builder,
   });
-
   @override
   _CommonBottomNavigationBarState createState() =>
       _CommonBottomNavigationBarState();
@@ -43,8 +42,12 @@ class _CommonBottomNavigationBarState extends State<CommonBottomNavigationBar> {
     print('CommonBottomNavigationBar initializing');
     super.initState();
     _selectedIndex = widget.currentIndex;
-    _pages[widget.currentIndex] = widget.child;
-    _isPageInitialized[widget.currentIndex] = true;
+
+    // Only build the page if it’s not initialized and builder exists
+    if (!_isPageInitialized[_selectedIndex] && widget.builder != null) {
+      _pages[_selectedIndex] = widget.builder!(context);
+      _isPageInitialized[_selectedIndex] = true;
+    }
   }
 
   // To keep track of which pages have been initialized
@@ -58,7 +61,7 @@ class _CommonBottomNavigationBarState extends State<CommonBottomNavigationBar> {
   ];
   // Pages list; initialized with the first page
   final List<Widget?> _pages = [
-    HomeScreen(),
+    null,
     null,
     null,
     null,
@@ -153,7 +156,10 @@ class _CommonBottomNavigationBarState extends State<CommonBottomNavigationBar> {
         }
 
         return Scaffold(
-          body: _pages[_selectedIndex] ?? Container(),
+          body: _selectedIndex == 0 && widget.builder != null
+              ? widget.builder!(context)
+              : _pages[_selectedIndex] ??
+                  const Center(child: CircularProgressIndicator()),
           bottomNavigationBar: DecoratedBox(
             decoration: BoxDecoration(
               border: Border.all(

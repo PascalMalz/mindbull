@@ -2,7 +2,7 @@ git add .
 git commit -m "Your commit message"
 git push
 
-git commit -m "Added fully functional Reminder into daily tab"
+git commit -m "Daily renamed in my daily and workout to todays workout and optimized. Now i there are issues with data as it was based on table names. Have to cheange to ID's"
 
 run test file:
 flutter run -t lib/test_main.dart > logs.txt
